@@ -1,0 +1,150 @@
+id: api_service
+name: API服务
+description: 适用于RESTful API服务、微服务的专用模板，强调接口设计和技术规范
+icon: "🔌"
+
+dimensions:
+  core_features: 20
+  user_roles: 10
+  data_entities: 25
+  non_functional: 30
+  integrations: 15
+
+sections:
+  - id: service_overview
+    title: "1. 服务概述"
+    required: true
+    subsections:
+      - id: one_liner
+        title: "1.1 一句话描述"
+        hints:
+          - "例如：一个提供用户认证和授权的微服务"
+      - id: purpose
+        title: "1.2 服务定位"
+        hints:
+          - "服务的职责边界"
+          - "与其他服务的关系"
+      - id: target_clients
+        title: "1.3 目标客户端"
+        hints:
+          - "哪些系统会调用此API？"
+          - "客户端类型（Web、Mobile、其他服务）"
+
+  - id: api_design
+    title: "2. API设计"
+    required: true
+    subsections:
+      - id: endpoints
+        title: "2.1 接口列表"
+        hints:
+          - "完整的CRUD接口"
+          - "路径、方法、请求/响应格式"
+      - id: authentication
+        title: "2.2 认证授权"
+        hints:
+          - "认证方式（JWT、OAuth、API Key）"
+          - "权限控制策略"
+      - id: error_handling
+        title: "2.3 错误处理"
+        hints:
+          - "统一错误码规范"
+          - "错误响应格式"
+      - id: rate_limiting
+        title: "2.4 限流策略"
+        hints:
+          - "请求频率限制"
+          - "熔断降级策略"
+
+  - id: data_models
+    title: "3. 数据模型"
+    required: true
+    subsections:
+      - id: entities
+        title: "3.1 数据实体"
+        hints:
+          - "核心数据表设计"
+          - "字段定义、约束"
+      - id: database
+        title: "3.2 数据库设计"
+        hints:
+          - "选择什么数据库？"
+          - "索引设计、查询优化"
+
+  - id: architecture
+    title: "4. 架构设计"
+    required: true
+    subsections:
+      - id: tech_stack
+        title: "4.1 技术栈"
+        hints:
+          - "语言、框架、中间件"
+          - "版本选择"
+      - id: deployment
+        title: "4.2 部署方案"
+        hints:
+          - "容器化、Kubernetes?"
+          - "CI/CD流程"
+      - id: scalability
+        title: "4.3 扩展性设计"
+        hints:
+          - "水平扩展方案"
+          - "数据分片策略"
+
+  - id: integrations
+    title: "5. 外部集成"
+    required: true
+    subsections:
+      - id: upstream
+        title: "5.1 上游依赖"
+        hints:
+          - "依赖哪些其他服务？"
+          - "调用方式"
+      - id: downstream
+        title: "5.2 下游服务"
+        hints:
+          - "被哪些服务调用？"
+          - "接口契约"
+      - id: third_party
+        title: "5.3 第三方服务"
+        hints:
+          - "消息队列、缓存、存储"
+
+  - id: non_functional
+    title: "6. 非功能需求"
+    required: true
+    subsections:
+      - id: performance
+        title: "6.1 性能要求"
+        hints:
+          - "响应时间SLA"
+          - "QPS目标"
+      - id: availability
+        title: "6.2 可用性"
+        hints:
+          - "SLA指标（99.9%）"
+          - "故障恢复时间"
+      - id: security
+        title: "6.3 安全要求"
+        hints:
+          - "数据加密、传输安全"
+          - "防护措施（WAF、DDoS）"
+
+  - id: testing
+    title: "7. 测试策略"
+    required: true
+    subsections:
+      - id: unit_tests
+        title: "7.1 单元测试"
+        hints:
+          - "测试覆盖率要求"
+          - "关键逻辑测试"
+      - id: integration_tests
+        title: "7.2 集成测试"
+        hints:
+          - "API接口测试"
+          - "服务间集成测试"
+      - id: load_tests
+        title: "7.3 性能测试"
+        hints:
+          - "压力测试场景"
+          - "容量规划"

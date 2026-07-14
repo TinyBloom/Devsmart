@@ -1,0 +1,146 @@
+# DevSmart Project Package
+
+## 项目概述
+**项目名称**: {{ project_name }}
+**项目描述**: {{ project_description }}
+**PRD 版本**: {{ prd_version }}
+
+---
+
+## 一、文件说明
+
+| 文件路径 | 说明 |
+|---------|------|
+| `prd/human_prd.md` | 详细的产品需求文档，包含功能描述、用户角色、数据模型、API 接口等 |
+| `prd/machine_prd.yaml` | 结构化的机器可读 PRD，包含项目模块、数据模型、API 端点、非功能需求等 |
+| `tech_stack/chosen_stack.yaml` | 用户最终选择的技术栈配置 |
+| `tech_stack/tech_options.yaml` | 推荐的技术方案列表（含权衡说明） |
+| `skills/` | 生成这些文档所使用的 Skill 定义，包含执行逻辑和提示词模板 |
+| `INSTRUCTIONS.md` | 本文件，说明如何使用这些文档生成代码 |
+
+---
+
+## 二、技术栈选择
+
+{% if tech_stack %}
+
+### 后端框架
+**名称**: {{ tech_stack.backend.name if tech_stack.backend else '未选择' }}
+**框架**: {{ tech_stack.backend.framework if tech_stack.backend else '' }}
+**ORM**: {{ tech_stack.backend.orm if tech_stack.backend else '' }}
+
+### 前端框架
+**名称**: {{ tech_stack.frontend.name if tech_stack.frontend else '未选择' }}
+**UI 库**: {{ tech_stack.frontend.ui_library if tech_stack.frontend else '' }}
+
+### 数据库
+**名称**: {{ tech_stack.database.name if tech_stack.database else '未选择' }}
+
+### 缓存
+**名称**: {{ tech_stack.cache.name if tech_stack.cache else '未配置' }}
+
+### 部署方式
+**名称**: {{ tech_stack.deployment.name if tech_stack.deployment else '未选择' }}
+
+### CI/CD
+**名称**: {{ tech_stack.cicd.name if tech_stack.cicd else '未选择' }}
+
+{% else %}
+
+**技术栈尚未选择，请根据 PRD 需求选择合适的技术栈**
+
+{% endif %}
+
+---
+
+## 三、任务要求
+
+请根据以上文件，完成以下任务：
+
+### 1. 代码生成
+- 根据 `prd/human_prd.md` 的功能描述生成完整代码
+- 遵循 `tech_stack/chosen_stack.yaml` 中的技术选型
+- 代码结构清晰，符合工程规范
+- 包含必要的注释和文档
+
+### 2. 项目结构
+
+```
+{{ project_name }}/
+├── backend/                    # 后端代码
+│   ├── src/                    # 源代码
+│   │   ├── controllers/        # 控制器层
+│   │   ├── services/           # 业务逻辑层
+│   │   ├── repositories/       # 数据访问层
+│   │   ├── models/             # 数据模型
+│   │   ├── dto/                # 数据传输对象
+│   │   ├── config/             # 配置文件
+│   │   └── main.py             # 入口文件
+│   ├── tests/                  # 单元测试
+│   ├── requirements.txt        # 依赖声明
+│   └── README.md               # 后端说明文档
+├── frontend/                   # 前端代码（如果需要）
+│   ├── src/                    # 源代码
+│   │   ├── components/         # 组件
+│   │   ├── pages/              # 页面
+│   │   ├── services/           # API 服务
+│   │   ├── stores/             # 状态管理
+│   │   └── main.tsx            # 入口文件
+│   ├── package.json            # 依赖声明
+│   └── README.md               # 前端说明文档
+├── docker-compose.yml          # Docker 编排
+├── Dockerfile                  # Dockerfile
+├── .gitignore                  # Git 忽略配置
+└── README.md                   # 项目说明文档
+```
+
+### 3. API 接口实现
+根据 `prd/machine_prd.yaml` 中的 `api_endpoints` 定义，实现所有接口：
+- 每个接口要有请求参数校验
+- 每个接口要有错误处理
+- 提供 OpenAPI/Swagger 文档
+
+### 4. 数据库设计
+根据 `prd/machine_prd.yaml` 中的 `data_models` 定义：
+- 创建数据库表结构
+- 实现实体关系
+- 添加必要的索引
+
+### 5. 非功能需求
+实现 `prd/machine_prd.yaml` 中定义的非功能需求：
+- 性能要求（响应时间、并发用户数）
+- 安全要求（认证方式、加密算法）
+- 扩展性要求（水平扩展策略）
+
+---
+
+## 四、代码生成要求
+
+### 代码质量
+- 使用项目技术栈的最佳实践
+- 代码风格一致
+- 包含完整的单元测试（覆盖率 ≥ 80%）
+- 代码要有清晰的注释
+
+### 文档要求
+- 提供 API 接口文档
+- 提供项目部署指南
+- 提供开发环境搭建说明
+
+### 可运行性
+- 生成的代码需要完整可运行
+- 提供启动脚本和测试脚本
+- 包含必要的配置文件（开发/测试/生产环境）
+
+---
+
+## 五、输出要求
+
+完成后请输出：
+1. 完整的项目代码结构
+2. 每个文件的内容
+3. 运行和测试说明
+
+---
+
+> 本项目包由 DevSmart 生成，包含完整的需求文档和技术栈配置。

@@ -1,0 +1,55 @@
+id: devsmart.workflow.llm-code-generation
+version: 1.0.0
+description: 从已确认需求到可验证代码任务与自动修复的完整门禁流程
+steps:
+  - id: generate_human_prd
+    uses: devsmart.prd.generate-human@1.0.0
+  - id: validate_human_prd
+    uses: devsmart.prd.validate-human@1.0.0
+  - id: generate_machine_prd
+    uses: devsmart.prd.generate-machine@1.0.0
+    when: "steps.validate_human_prd.output.valid == true"
+  - id: validate_machine_prd
+    uses: devsmart.prd.validate-consistency@1.0.0
+  - id: analyze_constraints
+    uses: devsmart.tech.analyze-constraints@1.0.0
+    when: "steps.validate_machine_prd.output.valid == true"
+  - id: recommend_stack
+    uses: devsmart.tech.recommend-stack@1.0.0
+  - id: validate_stack
+    uses: devsmart.tech.validate-compatibility@1.0.0
+  - id: generate_architecture
+    uses: devsmart.architecture.generate@1.0.0
+    when: "steps.validate_stack.output.valid == true"
+  - id: validate_architecture
+    uses: devsmart.architecture.validate@1.0.0
+  - id: generate_code_plan
+    uses: devsmart.codegen.plan@1.0.0
+    when: "steps.validate_architecture.output.valid == true"
+  - id: validate_code_plan
+    uses: devsmart.codegen.validate-plan@1.0.0
+  - id: execute_code_tasks
+    type: task_loop
+    source: steps.generate_code_plan.output.tasks
+    when: "steps.validate_code_plan.output.valid == true"
+    contract:
+      read_context: task.read_context
+      write_scope: task.write_scope
+      forbidden_scope: task.forbidden_scope
+      outputs: task.outputs
+      validation_commands: task.validation_commands
+  - id: diagnose_failure
+    uses: devsmart.feedback.diagnose@1.0.0
+    when: "steps.execute_code_tasks.output.exit_code != 0"
+  - id: repair_failure
+    uses: devsmart.feedback.repair@1.0.0
+    when: "steps.diagnose_failure.output.retry_safe == true"
+    retry:
+      max_attempts: 3
+      stop_on:
+        - blocked
+        - no_change
+  - id: full_regression
+    type: command_batch
+    source: steps.generate_code_plan.output.global_validation_commands
+    when: "steps.execute_code_tasks.output.exit_code == 0"

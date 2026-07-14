@@ -1,0 +1,13 @@
+id: devsmart.workflow.requirement-discovery
+version: 1.0.0
+steps:
+  - id: analyze_gaps
+    uses: devsmart.requirement.analyze-gaps@1.0.0
+  - id: next_question
+    uses: devsmart.requirement.generate-next-question@1.0.0
+    when: "steps.analyze_gaps.output.completeness < 75"
+  - id: update_requirements
+    uses: devsmart.requirement.update-structured@1.0.0
+    when: "inputs.latest_user_message != null"
+  - id: validate_readiness
+    uses: devsmart.requirement.validate-readiness@1.0.0

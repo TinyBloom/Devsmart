@@ -1,0 +1,127 @@
+skill: "skill_tech_recommend"
+version: "1.0"
+phase: 2
+
+description: |
+  根据 Machine PRD 内容，推荐 1-3 套技术方案。每套方案包含详细的技术栈配置和权衡分析。
+
+input:
+  - name: machine_prd
+    type: file
+    path: "{project_dir}/docs/machine_prd.yaml"
+    required: true
+    description: Machine-readable PRD 文件
+
+output:
+  - name: tech_options
+    type: file
+    path: "{project_dir}/docs/tech_options.yaml"
+    required: true
+    description: 技术选项 YAML，包含 1-3 套方案
+
+config:
+  max_recommendations: 3
+  min_recommendations: 1
+
+  # 技术栈维度
+  dimensions:
+    backend:
+      - name: rust_actix
+        weight: 1.0
+      - name: java_spring
+        weight: 1.0
+      - name: java_quarkus
+        weight: 1.0
+      - name: go_gin
+        weight: 1.0
+      - name: python_fastapi
+        weight: 1.0
+    frontend:
+      - name: react_vite
+        weight: 1.0
+      - name: vue_vite
+        weight: 0.8
+      - name: svelte
+        weight: 0.6
+    database:
+      - name: postgresql
+        weight: 1.0
+      - name: mysql
+        weight: 0.8
+      - name: mongodb
+        weight: 0.6
+    cache:
+      - name: redis
+        weight: 1.0
+    deployment:
+      - name: kubernetes_helm
+        weight: 1.0
+      - name: kubernetes_operator
+        weight: 0.6
+      - name: spring_cloud
+        weight: 0.8
+    cicd:
+      - name: github_actions
+        weight: 1.0
+      - name: jenkins
+        weight: 0.7
+
+  # 权衡分析模板
+  tradeoff_template: |
+    优点：{pros}
+    缺点：{cons}
+    复杂度：{complexity}
+    性能：{performance}
+    上市时间：{time_to_market}
+
+execution:
+  order: sequential
+  steps:
+    - id: analyze_prd
+      name: 分析 PRD 需求特征
+      action: parse_machine_prd
+    - id: analyze_constraints
+      name: 分析约束条件
+      action: extract_constraints
+    - id: generate_recommendations
+      name: 生成技术方案推荐
+      action: recommend_stacks
+    - id: format_output
+      name: 格式化输出
+      action: format_tech_options
+
+artifacts:
+  template: |
+    tech_options:
+      generated_at: "{timestamp}"
+      project_name: "{project_name}"
+      analysis:
+        scale: "{scale}"
+        team_size: "{team_size}"
+        performance_requirement: "{performance_level}"
+        time_to_market: "{time_pressure}"
+        has_ai_requirement: {has_ai}
+
+      recommendations:
+        - name: "{方案名称}"
+          description: "{方案描述}"
+          backend:
+            framework: "{后端框架}"
+            orm: "{ORM}"
+            pros: {pros}
+            cons: {cons}
+          frontend:
+            framework: "{前端框架}"
+            ui_library: "{UI库}"
+          database:
+            primary: "{主数据库}"
+            cache: "{缓存}"
+          deployment:
+            method: "{部署方式}"
+          cicd:
+            tool: "{CI/CD工具}"
+          reason: "{推荐理由}"
+          tradeoffs: |
+            {权衡分析}
+          risk: "{潜在风险}"
+          suitability_score: {score}

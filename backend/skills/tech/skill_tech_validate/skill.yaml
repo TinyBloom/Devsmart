@@ -1,0 +1,120 @@
+skill: "skill_tech_validate"
+version: "1.0"
+phase: 2
+
+description: |
+  验证用户选择的技术栈是否合理，检查与 PRD 需求的匹配度，发现潜在问题。
+
+input:
+  - name: machine_prd
+    type: file
+    path: "{project_dir}/docs/machine_prd.yaml"
+    required: true
+    description: Machine-readable PRD 文件
+  - name: tech_selection
+    type: object
+    required: true
+    description: 用户选择的技术栈
+    properties:
+      backend:
+        type: string
+      frontend:
+        type: string
+      database:
+        type: string
+      cache:
+        type: string
+      deployment:
+        type: string
+      cicd:
+        type: string
+
+output:
+  - name: validation_report
+    type: file
+    path: "{project_dir}/docs/tech_validation.yaml"
+    required: true
+    description: 验证报告 YAML
+
+execution:
+  order: sequential
+  steps:
+    - id: load_prd
+      name: 加载 Machine PRD
+      action: parse_machine_prd
+    - id: load_selection
+      name: 加载技术选择
+      action: parse_tech_selection
+    - id: validate_backend
+      name: 验证后端选择
+      action: validate_backend_choice
+    - id: validate_database
+      name: 验证数据库选择
+      action: validate_database_choice
+    - id: validate_deployment
+      name: 验证部署方式
+      action: validate_deployment_choice
+    - id: check_compatibility
+      name: 检查兼容性
+      action: check_stack_compatibility
+    - id: generate_report
+      name: 生成验证报告
+      action: generate_validation_report
+
+validation_rules:
+  backend:
+    - id: ai_mismatch
+      condition: "has_ai_requirement && backend != python_fastapi"
+      severity: warning
+      message: "检测到 AI 相关需求，建议考虑 Python 作为后端语言"
+
+    - id: rust_small_project
+      condition: "backend == rust_actix && project_scale == small"
+      severity: high
+      message: "Rust 学习曲线陡峭，编译时间长，不适合快速原型开发"
+
+    - id: python_large_scale
+      condition: "backend == python_fastapi && project_scale == large"
+      severity: medium
+      message: "Python FastAPI 在超大规模系统中的性能可能不足"
+
+    - id: high_concurrency_python
+      condition: "performance == high && backend == python_fastapi"
+      severity: high
+      message: "Python (GIL) 在高并发场景下性能受限"
+
+  database:
+    - id: elasticsearch_overkill
+      condition: "database == elasticsearch && feature_count < 5"
+      severity: low
+      message: "Elasticsearch 资源消耗大，运维复杂，简单项目可能不需要"
+
+  deployment:
+    - id: k8s_small_project
+      condition: "deployment includes kubernetes && feature_count < 5"
+      severity: low
+      message: "Kubernetes 复杂度较高，对于简单项目可能过度设计"
+
+artifacts:
+  template: |
+    validation_report:
+      generated_at: "{timestamp}"
+      project_name: "{project_name}"
+
+      status: "{passed|warning|error}"
+      summary: "{总结信息}"
+
+      warnings:
+        - id: "{警告ID}"
+          severity: "{high|medium|low}"
+          message: "{警告消息}"
+          suggestion: "{建议}"
+
+      suggestions:
+        - message: "{建议消息}"
+
+      compatibility_matrix:
+        backend_frontend: "{compatible|incompatible|unknown}"
+        backend_database: "{compatible|incompatible|unknown}"
+        backend_deployment: "{compatible|incompatible|unknown}"
+        all_compatible: {true|false}

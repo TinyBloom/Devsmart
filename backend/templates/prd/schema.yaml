@@ -1,0 +1,89 @@
+title: PRD Template Schema
+description: PRD模板配置文件的Schema定义
+version: 1.0
+
+fields:
+  id:
+    type: string
+    description: 模板唯一标识符，用于API调用
+    example: "general_saas"
+  
+  name:
+    type: string
+    description: 模板显示名称
+    example: "通用SaaS产品"
+  
+  description:
+    type: string
+    description: 模板描述，帮助用户选择合适的模板
+    example: "适用于大多数SaaS产品的通用模板"
+  
+  icon:
+    type: string
+    description: 模板图标（emoji）
+    example: "🏢"
+  
+  dimensions:
+    type: object
+    description: 需求完整度维度及其权重
+    properties:
+      core_features:
+        type: number
+        description: 核心功能维度权重（0-100）
+        example: 30
+      user_roles:
+        type: number
+        description: 用户角色维度权重（0-100）
+        example: 15
+      data_entities:
+        type: number
+        description: 数据实体维度权重（0-100）
+        example: 25
+      non_functional:
+        type: number
+        description: 非功能需求维度权重（0-100）
+        example: 15
+      integrations:
+        type: number
+        description: 外部集成维度权重（0-100）
+        example: 15
+  
+  sections:
+    type: array
+    description: PRD文档的章节结构
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 章节唯一标识
+          example: "product_overview"
+        title:
+          type: string
+          description: 章节标题
+          example: "1. 产品概述"
+        required:
+          type: boolean
+          description: 是否为必填章节
+          example: true
+        description:
+          type: string
+          description: 章节描述
+          example: "产品的基本信息和定位"
+        subsections:
+          type: array
+          description: 子章节列表
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: "one_liner"
+              title:
+                type: string
+                example: "1.1 一句话描述"
+              hints:
+                type: array
+                description: 提示用户填写的问题或示例
+                items:
+                  type: string

@@ -1,0 +1,124 @@
+id: mobile_app
+name: 移动应用
+description: 适用于iOS/Android移动端应用的专用模板，关注移动端交互体验和设备特性
+icon: "📱"
+
+dimensions:
+  core_features: 35
+  user_roles: 15
+  data_entities: 20
+  non_functional: 20
+  integrations: 10
+
+sections:
+  - id: product_overview
+    title: "1. 产品概述"
+    required: true
+    subsections:
+      - id: one_liner
+        title: "1.1 一句话描述"
+        hints:
+          - "例如：一款基于地理位置的社交应用"
+      - id: platform
+        title: "1.2 目标平台"
+        hints:
+          - "iOS、Android、还是双平台？"
+          - "是否需要平板适配？"
+      - id: core_value
+        title: "1.3 核心价值"
+        hints:
+          - "移动端独有的体验优势"
+
+  - id: screens
+    title: "2. 页面结构"
+    required: true
+    subsections:
+      - id: screen_list
+        title: "2.1 页面清单"
+        hints:
+          - "列出所有页面"
+          - "页面之间的跳转关系"
+      - id: navigation
+        title: "2.2 导航设计"
+        hints:
+          - "底部导航、侧边栏、Tab?"
+          - "深层页面的返回逻辑"
+
+  - id: features
+    title: "3. 核心功能"
+    required: true
+    subsections:
+      - id: core_features_list
+        title: "3.1 核心功能列表"
+        hints:
+          - "每个功能的详细说明"
+          - "用户交互流程"
+      - id: device_features
+        title: "3.2 设备特性集成"
+        hints:
+          - "GPS、相机、推送通知"
+          - "手势操作、传感器"
+
+  - id: ui_ux
+    title: "4. UI/UX设计"
+    required: true
+    subsections:
+      - id: design_system
+        title: "4.1 设计规范"
+        hints:
+          - "色彩方案、字体规范"
+          - "组件库选择"
+      - id: interactions
+        title: "4.2 交互细节"
+        hints:
+          - "加载状态、错误提示"
+          - "空状态设计"
+
+  - id: data_models
+    title: "5. 数据模型"
+    required: true
+    subsections:
+      - id: entities
+        title: "5.1 核心实体"
+        hints:
+          - "User, Profile, Feed, Message等"
+      - id: offline_data
+        title: "5.2 离线数据"
+        hints:
+          - "需要缓存哪些数据？"
+          - "离线操作支持？"
+
+  - id: api_integration
+    title: "6. API集成"
+    required: true
+    subsections:
+      - id: api_endpoints
+        title: "6.1 API接口"
+        hints:
+          - "与后端的API交互"
+          - "请求频率限制"
+      - id: third_party_sdk
+        title: "6.2 第三方SDK"
+        hints:
+          - "地图、支付、分享SDK"
+          - "统计分析SDK"
+
+  - id: non_functional
+    title: "7. 非功能需求"
+    required: true
+    subsections:
+      - id: performance
+        title: "7.1 性能要求"
+        hints:
+          - "启动时间、页面加载时间"
+          - "内存占用限制"
+      - id: compatibility
+        title: "7.2 兼容性"
+        hints:
+          - "支持的iOS/Android版本"
+          - "不同设备分辨率适配"
+      - id: security
+        title: "7.3 安全要求"
+        hints:
+          - "数据加密、安全存储"
+          - "证书校验"

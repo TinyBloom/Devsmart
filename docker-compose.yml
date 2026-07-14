@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16.8-alpine3.21
+    container_name: devsmart-postgres
+    environment:
+      POSTGRES_USER: devsmart
+      POSTGRES_PASSWORD: devsmart
+      POSTGRES_DB: devsmart
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devsmart -d devsmart"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    name: devsmart_postgres_data

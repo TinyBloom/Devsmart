@@ -1,0 +1,15 @@
+id: devsmart.workflow.prd-generation
+version: 1.1.0
+steps:
+  - id: generate_human_prd
+    uses: devsmart.prd.generate-human@1.0.0
+  - id: validate_human_prd
+    uses: devsmart.prd.validate-human@1.0.0
+  - id: generate_machine_prd
+    uses: devsmart.prd.generate-machine@1.0.0
+    when: "steps.validate_human_prd.output.valid == true"
+  - id: validate_consistency
+    uses: devsmart.prd.validate-consistency@1.0.0
+  - id: generate_test_plan
+    uses: devsmart.prd.generate-test-plan@1.0.0
+    when: "steps.validate_consistency.output.valid == true"

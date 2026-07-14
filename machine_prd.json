@@ -1,0 +1,6 @@
+error: "2 validation errors for GenerateMachinePrdInput\nrequirements.UUID('e54f957f-b6d7-477a-81e1-7fff8e0097c2').[key]\n\
+  \  Input should be a valid string [type=string_type, input_value=UUID('e54f957f-b6d7-477a-81e1-7fff8e0097c2'),\
+  \ input_type=UUID]\n    For further information visit https://errors.pydantic.dev/2.12/v/string_type\n\
+  requirements.UUID('90c608fa-1481-4b29-9886-55ba7b883c68').[key]\n  Input should\
+  \ be a valid string [type=string_type, input_value=UUID('90c608fa-1481-4b29-9886-55ba7b883c68'),\
+  \ input_type=UUID]\n    For further information visit https://errors.pydantic.dev/2.12/v/string_type"

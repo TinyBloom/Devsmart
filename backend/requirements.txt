@@ -1,0 +1,30 @@
+# DevPilot Backend Dependencies
+
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+asyncpg  # PostgreSQL async driver
+psycopg2-binary  # PostgreSQL sync driver (for migrations)
+aiosqlite  # SQLite async driver (for development)
+
+# Data Validation
+pydantic
+pydantic-settings
+
+# LLM Integration
+litellm  # Multi-provider LLM adapter
+
+# Utilities
+python-dotenv
+python-multipart  # File uploads
+aiofiles  # Async file operations
+pyyaml  # YAML parsing
+
+# Security
+cryptography  # API Key encryption
+
+# Development
+httpx  # HTTP client for testing

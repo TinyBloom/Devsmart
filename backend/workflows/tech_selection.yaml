@@ -1,0 +1,12 @@
+id: devsmart.workflow.tech-selection
+version: 1.0.0
+steps:
+  - id: analyze_constraints
+    uses: devsmart.tech.analyze-constraints@1.0.0
+  - id: recommend_stack
+    uses: devsmart.tech.recommend-stack@1.0.0
+  - id: validate_stack
+    uses: devsmart.tech.validate-compatibility@1.0.0
+  - id: generate_adr
+    uses: devsmart.tech.generate-adr@1.0.0
+    when: "steps.validate_stack.output.valid == true"

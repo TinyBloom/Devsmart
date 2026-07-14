@@ -1,0 +1,348 @@
+skill: "skill_prd_generate"
+version: "1.1"
+phase: 1
+
+description: |
+  根据对话历史生成双版本 PRD：Human PRD (Markdown) 和 Machine PRD (YAML)，
+  包含完整的测试计划（单元测试、集成测试、Playwright端到端测试）。
+
+input:
+  - name: conversation_history
+    type: object
+    required: true
+    description: 对话历史，包含用户需求描述和 LLM 追问
+  - name: project_name
+    type: string
+    required: true
+    description: 项目名称
+
+output:
+  - name: human_prd
+    type: file
+    path: "{project_dir}/docs/human_prd_v{version}.md"
+    required: true
+    description: 人类可读的 PRD (Markdown)
+  - name: machine_prd
+    type: file
+    path: "{project_dir}/docs/machine_prd_v{version}.yaml"
+    required: true
+    description: 机器可读的 PRD (YAML)
+  - name: current_links
+    type: file
+    path: "{project_dir}/docs/human_prd_current.md"
+    description: 当前版本软链接 (可选)
+
+output_schema:
+  human_prd:
+    type: string
+    format: markdown
+    template: |
+      # {project_name}
+
+      ## 1. 产品概述
+      - 一句话描述：{one_liner}
+      - 目标用户：{target_users}
+      - 核心价值：{core_value}
+
+      ## 2. 功能模块
+      {features}
+
+      ## 3. 数据模型
+      {data_models}
+
+      ## 4. API 接口清单
+      {api_list}
+
+      ## 5. 非功能需求
+      {non_functional}
+
+      ## 6. 外部集成
+      {integrations}
+
+      ## 7. 测试计划
+
+      ### 7.1 单元测试
+      {unit_tests}
+
+      ### 7.2 集成测试
+      {integration_tests}
+
+      ### 7.3 Playwright 端到端测试
+      {playwright_tests}
+
+      ## 8. 工程目录结构
+
+      ### 8.1 后端目录结构
+      {backend_structure}
+
+      ### 8.2 前端目录结构
+      {frontend_structure}
+
+      ## 9. 统一错误响应格式
+
+      ### 9.1 错误响应 JSON 结构
+      {error_format}
+
+      ### 9.2 HTTP 状态码映射
+      {http_status_mapping}
+
+      ## 10. API 响应体定义
+
+      ### 10.1 分页响应格式
+      {pagination_format}
+
+      ### 10.2 各接口成功响应示例
+      {api_responses}
+
+      ## 11. 数据库建表 SQL
+
+      ### 11.1 表结构 SQL
+      {database_sql}
+
+      ### 11.2 索引定义
+      {database_indexes}
+
+      ## 12. 前端页面清单和路由定义
+
+      {frontend_routes}
+
+      ## 13. 测试用例规范
+
+      {test_specifications}
+
+  machine_prd:
+    type: object
+    properties:
+      project_name:
+        type: string
+      version:
+        type: string
+      generated_at:
+        type: string
+      features:
+        type: array
+        items:
+          type: object
+      data_models:
+        type: array
+        items:
+          type: object
+      api_endpoints:
+        type: array
+        items:
+          type: object
+      non_functional:
+        type: object
+      integrations:
+        type: array
+        items:
+          type: object
+      test_plan:
+        type: object
+        properties:
+          unit_tests:
+            type: array
+            items:
+              type: object
+              properties:
+                feature_id:
+                  type: string
+                test_name:
+                  type: string
+                test_description:
+                  type: string
+                test_file:
+                  type: string
+          integration_tests:
+            type: array
+            items:
+              type: object
+              properties:
+                feature_id:
+                  type: string
+                test_name:
+                  type: string
+                test_description:
+                  type: string
+                test_file:
+                  type: string
+          playwright_tests:
+            type: array
+            items:
+              type: object
+              properties:
+                feature_id:
+                  type: string
+                test_name:
+                  type: string
+                test_description:
+                  type: string
+                test_file:
+                  type: string
+                test_scenarios:
+                  type: array
+                  items:
+                    type: string
+      project_structure:
+        type: object
+        properties:
+          backend:
+            type: array
+            items:
+              type: string
+          frontend:
+            type: array
+            items:
+              type: string
+      error_format:
+        type: object
+        properties:
+          structure:
+            type: object
+          status_codes:
+            type: object
+      api_responses:
+        type: array
+        items:
+          type: object
+          properties:
+            endpoint:
+              type: string
+            method:
+              type: string
+            response_body:
+              type: object
+            pagination:
+              type: boolean
+      database_schema:
+        type: object
+        properties:
+          tables:
+            type: array
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                sql:
+                  type: string
+          indexes:
+            type: array
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                table:
+                  type: string
+                columns:
+                  type: array
+                  items:
+                    type: string
+                type:
+                  type: string
+      frontend_routes:
+        type: array
+        items:
+          type: object
+          properties:
+            path:
+              type: string
+            view:
+              type: string
+            description:
+              type: string
+            features:
+              type: array
+              items:
+                type: string
+      test_specifications:
+        type: array
+        items:
+          type: object
+          properties:
+            module:
+              type: string
+            scenarios:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  expected_result:
+                    type: string
+
+completeness_check:
+  dimensions:
+    - id: core_features
+      weight: 0.15
+      required_fields: ["features"]
+      min_items: 1
+    - id: user_roles
+      weight: 0.05
+      required_fields: ["target_users"]
+      min_items: 1
+    - id: data_entities
+      weight: 0.10
+      required_fields: ["data_models"]
+      min_items: 1
+    - id: non_functional
+      weight: 0.05
+      required_fields: ["non_functional"]
+    - id: integrations
+      weight: 0.05
+      required_fields: ["integrations"]
+      min_items: 1
+    - id: test_plan
+      weight: 0.10
+      required_fields: ["test_plan"]
+      min_items: 1
+    - id: project_structure
+      weight: 0.10
+      required_fields: ["project_structure"]
+      min_items: 1
+    - id: error_format
+      weight: 0.10
+      required_fields: ["error_format"]
+      min_items: 1
+    - id: api_responses
+      weight: 0.10
+      required_fields: ["api_responses"]
+      min_items: 1
+    - id: database_schema
+      weight: 0.10
+      required_fields: ["database_schema"]
+      min_items: 1
+    - id: frontend_routes
+      weight: 0.05
+      required_fields: ["frontend_routes"]
+      min_items: 1
+    - id: test_specifications
+      weight: 0.05
+      required_fields: ["test_specifications"]
+      min_items: 1
+
+execution:
+  order: sequential
+  steps:
+    - id: analyze_conversation
+      name: 分析对话历史
+      action: extract_requirements_from_conversation
+    - id: check_completeness
+      name: 检查需求完整度
+      action: calculate_completeness_score
+    - id: generate_human_prd
+      name: 生成 Human PRD
+      action: generate_markdown_prd
+    - id: generate_machine_prd
+      name: 生成 Machine PRD
+      action: generate_yaml_prd
+    - id: generate_test_plan
+      name: 生成测试计划
+      action: generate_test_plan
+    - id: save_outputs
+      name: 保存输出文件
+      action: write_prd_files

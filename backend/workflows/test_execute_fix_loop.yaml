@@ -1,0 +1,41 @@
+id: devsmart.workflow.test-execute-fix-loop
+version: 1.0.0
+description: "测试执行修复循环工作流：运行测试 -> 解析结果 -> 分析失败 -> 生成修复 -> 重新运行"
+steps:
+  - id: execute_unit_tests
+    uses: devsmart.prd.test-execution-feedback@1.0.0
+    description: "执行单元测试"
+  - id: analyze_unit_failures
+    uses: devsmart.prd.fix-code-from-failure@1.0.0
+    when: "steps.execute_unit_tests.output.all_passed == false && steps.execute_unit_tests.output.retry_count < 3"
+    description: "分析单元测试失败并生成修复"
+  - id: retry_unit_tests
+    uses: devsmart.prd.test-execution-feedback@1.0.0
+    when: "steps.analyze_unit_failures.output.success == true"
+    description: "重新执行单元测试"
+  
+  - id: execute_integration_tests
+    uses: devsmart.prd.test-execution-feedback@1.0.0
+    when: "steps.retry_unit_tests.output.all_passed == true || steps.execute_unit_tests.output.all_passed == true"
+    description: "执行集成测试"
+  - id: analyze_integration_failures
+    uses: devsmart.prd.fix-code-from-failure@1.0.0
+    when: "steps.execute_integration_tests.output.all_passed == false && steps.execute_integration_tests.output.retry_count < 3"
+    description: "分析集成测试失败并生成修复"
+  - id: retry_integration_tests
+    uses: devsmart.prd.test-execution-feedback@1.0.0
+    when: "steps.analyze_integration_failures.output.success == true"
+    description: "重新执行集成测试"
+  
+  - id: execute_e2e_tests
+    uses: devsmart.prd.test-execution-feedback@1.0.0
+    when: "steps.retry_integration_tests.output.all_passed == true || steps.execute_integration_tests.output.all_passed == true"
+    description: "执行端到端测试"
+  - id: analyze_e2e_failures
+    uses: devsmart.prd.fix-code-from-failure@1.0.0
+    when: "steps.execute_e2e_tests.output.all_passed == false && steps.execute_e2e_tests.output.retry_count < 3"
+    description: "分析端到端测试失败并生成修复"
+  - id: retry_e2e_tests
+    uses: devsmart.prd.test-execution-feedback@1.0.0
+    when: "steps.analyze_e2e_failures.output.success == true"
+    description: "重新执行端到端测试"
