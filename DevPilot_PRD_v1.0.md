@@ -1,9 +1,9 @@
 # Product Requirements Document
-# AI-Powered Software Development Platform
+# DevSmart - AI-Powered Software Development Platform
 
-**Version:** 1.0  
-**Status:** Draft  
-**Last Updated:** 2026-06-28  
+**Version:** 1.1  
+**Status:** Active Development  
+**Last Updated:** 2026-07-15  
 **Document Type:** Human-readable PRD（供人审阅）
 
 ---
@@ -13,10 +13,11 @@
 1. [产品概述](#1-产品概述)
 2. [核心理念与设计原则](#2-核心理念与设计原则)
 3. [系统架构总览](#3-系统架构总览)
+   - [3.1 RAG 三层记忆架构](#31-rag-三层记忆架构)
 4. [用户角色](#4-用户角色)
 5. [功能模块详述](#5-功能模块详述)
-   - Phase 0: 项目管理
-   - Phase 1: 需求澄清与 PRD 生成
+   - Phase 0: 项目管理（含模板向导）
+   - Phase 1: 需求澄清与 PRD 生成（含下载）
    - Phase 2: 技术选型
    - Phase 3: 页面原型设计
    - Phase 4: 工程脚手架与代码生成
@@ -26,10 +27,10 @@
 7. [状态管理机制](#7-状态管理机制)
 8. [非功能需求](#8-非功能需求)
 9. [技术栈约束](#9-技术栈约束)
+   - [9.3 数据库迁移说明](#93-数据库迁移说明)
 10. [里程碑计划](#10-里程碑计划)
 11. [附录：Machine-readable PRD Schema](#11-附录machine-readable-prd-schema)
 12. [LLM 执行指南（Execution Guide）](#12-llm-执行指南execution-guide)
-    - [12.4.1 Playwright 测试规范](#1241-playwright-测试规范)
 
 ---
 
@@ -41,17 +42,26 @@
 
 ### 1.2 产品定位
 
-DevSmart 是一个面向开发者和产品经理的 AI-Native 平台。用户通过自然语言描述想法，平台通过 LLM 对话引导、多阶段 Skill 执行，最终自动生成可运行的软件工程，包括完整代码、测试用例和部署配置。
+DevSmart 是一个面向开发者和产品经理的 AI-Native 需求分析与 PRD 生成平台。用户通过自然语言描述想法，平台通过 LLM 对话引导，生成高质量的产品需求文档（PRD），并提供下载功能。下载后的 PRD 文档可交给任何 Code Agent（如 DevInfra、Cursor、GitHub Copilot 等）来生成代码。
+
+**当前版本定位：**
+- **核心功能**：需求澄清、PRD 生成、PRD 下载
+- **输出交付物**：Human PRD（Markdown）、Machine PRD（YAML）
+- **后续流程**：下载的 PRD 可作为输入交付给任何 Code Agent 进行代码生成
 
 ### 1.3 核心价值主张
 
-> 从一句话想法，到可部署的软件产品，全程 AI 辅助，人只需要做决策。
+> 从一句话想法，到结构化需求文档，全程 AI 辅助，PRD 可被任何 Code Agent 消费。
 
 ### 1.4 产品边界（Scope）
 
-**包含：**
+**当前版本（Phase 1 完成）包含：**
 - 需求澄清与结构化 PRD 生成
-- 技术栈推荐与选择
+- 技术栈选择（通过模板向导）
+- PRD 下载（Human PRD + Machine PRD）
+- 项目管理（创建、列表、恢复）
+
+**后续版本规划（Phase 2-6）：**
 - 页面原型生成（HTML 静态原型）
 - 工程脚手架生成
 - 完整代码生成（逐模块）
@@ -110,7 +120,7 @@ DevSmart 是一个面向开发者和产品经理的 AI-Native 平台。用户通
 ┌─────────────────────────────────────────────────────────────┐
 │                        Web Frontend                          │
 │              TypeScript + React + Vite                        │
-│         对话界面 / 选择界面 / 预览界面 / 进度界面            │
+│      对话界面 / 项目列表 / 模板向导 / PRD预览 / 下载        │
 └───────────────────────┬─────────────────────────────────────┘
                         │ REST API
 ┌───────────────────────▼─────────────────────────────────────┐
@@ -124,7 +134,7 @@ DevSmart 是一个面向开发者和产品经理的 AI-Native 平台。用户通
 │         │                 │                    │              │
 │  ┌──────▼─────────────────▼────────────────────▼──────────┐  │
 │  │                   Core Services                         │  │
-│  │  对话服务 / PRD服务 / 原型服务 / 代码服务 / 测试服务   │  │
+│  │  对话服务 / PRD服务 / RAG服务 / 摘要服务                │  │
 │  └─────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                         │
@@ -135,10 +145,31 @@ DevSmart 是一个面向开发者和产品经理的 AI-Native 平台。用户通
                         │
 ┌───────────────────────▼─────────────────────────────────────┐
 │                   Storage Layer                               │
-│      PostgreSQL（项目数据）+ Redis（会话缓存）               │
+│      SQLite（项目数据）+ ChromaDB（向量数据库）              │
 │      本地文件系统（生成的代码 / PRD / 原型）                 │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### 3.1 RAG 三层记忆架构
+
+平台引入 RAG（Retrieval-Augmented Generation）技术，构建三层记忆架构，提升对话上下文理解能力：
+
+| 层级 | 内容 | 存储方式 | 检索方式 |
+|------|------|---------|---------|
+| **短期记忆** | 当前对话历史（最近 5-10 轮） | SQLite | 直接读取 |
+| **中期记忆** | 对话摘要、关键决策点 | ChromaDB | 相似度检索 |
+| **长期记忆** | 模板数据、PRD、技术文档、代码规范 | ChromaDB | 语义检索 |
+
+**工作机制：**
+
+1. **长期记忆**：项目创建时，模板数据（需求描述、技术选型、部署形式）自动存入向量数据库。每次对话时，根据用户输入进行语义检索，将相关的项目知识注入到 LLM 上下文。
+
+2. **中期记忆**：对话过程中定期生成摘要，摘要内容存入向量数据库。检索时通过相似度匹配，找到与当前话题相关的历史对话要点。
+
+3. **短期记忆**：最近 N 轮对话直接从数据库读取，确保上下文的连续性。
+
+**降级策略：**
+- 当 RAG 服务不可用时（如向量数据库未初始化、网络问题），系统自动降级为传统的系统提示注入方式，使用项目的 `onboarding_data` 作为系统提示。
 
 ---
 
@@ -170,11 +201,10 @@ DevSmart 是一个面向开发者和产品经理的 AI-Native 平台。用户通
 ```
 打开平台首页
     ↓
-展示项目列表（可搜索） + LLM 设置入口
+展示项目列表（可搜索）
     ↓
-[新建项目] → 输入项目名称 → 检查 LLM 设置 → 进入 Phase 1 对话
+[新建项目] → 填写模板向导（需求描述、技术选型、部署形式） → 进入 Phase 1 对话
 [选择已有项目] → 恢复到上次中断的位置继续
-[LLM 设置] → 进入设置页面配置 LLM 选项
 ```
 
 #### 5.0.3 项目列表展示字段
@@ -218,7 +248,16 @@ DevSmart 是一个面向开发者和产品经理的 AI-Native 平台。用户通
 ```json
 {
   "name": "my-todo-app",
-  "description": "一个任务管理应用"
+  "description": "一个任务管理应用",
+  "onboarding_data": {
+    "requirements": "一个任务管理应用，支持任务创建、分配、进度追踪",
+    "tech_stack": {
+      "backend": "python",
+      "frontend": "react",
+      "database": "postgresql"
+    },
+    "deployment": "local_docker"
+  }
 }
 ```
 
@@ -226,6 +265,7 @@ DevSmart 是一个面向开发者和产品经理的 AI-Native 平台。用户通
 
 ```json
 {
+  "id": "uuid",
   "name": "my-todo-app",
   "description": "一个任务管理应用",
   "current_phase": "prd",
@@ -235,206 +275,15 @@ DevSmart 是一个面向开发者和产品经理的 AI-Native 平台。用户通
 }
 ```
 
-#### 5.0.7 LLM 设置页面
+**模板向导字段说明：**
 
-**功能描述：**
-
-用户可以在设置页面配置 LLM 相关选项，包括提供商、模型、API Key、Base URL、温度参数等。支持国内外主流 LLM 提供商和自定义 API 接入。设置完成后，所有项目共用这些配置。
-
-**页面布局：**
-
-```
-┌─────────────────────────────────────────────┐
-│  LLM 设置                                    │
-├─────────────────────────────────────────────┤
-│                                             │
-│  ┌───────────────────────────────────────┐  │
-│  │ 1. LLM 提供商                          │  │
-│  │   [OpenAI] [Anthropic] [Google]      │  │
-│  │   [Kimi] [GLM] [Qwen] [自定义]        │  │
-│  └───────────────────────────────────────┘  │
-│                                             │
-│  ┌───────────────────────────────────────┐  │
-│  │ 2. 模型选择                           │  │
-│  │   [下拉选择 / 自定义输入框]            │  │
-│  └───────────────────────────────────────┘  │
-│                                             │
-│  ┌───────────────────────────────────────┐  │
-│  │ 3. Base URL（自定义/Ollama时显示）    │  │
-│  │   [________________________________]  │  │
-│  │   提示：Ollama 默认 http://localhost:11434 │
-│  └───────────────────────────────────────┘  │
-│                                             │
-│  ┌───────────────────────────────────────┐  │
-│  │ 4. API Key                            │  │
-│  │   [________________________________]  │  │
-│  │   [显示/隐藏]                          │  │
-│  │   提示：Key 通过环境变量注入时留空      │  │
-│  └───────────────────────────────────────┘  │
-│                                             │
-│  ┌───────────────────────────────────────┐  │
-│  │ 5. 高级参数                           │  │
-│  │   温度: [0.7]  [滑块 0-1]             │  │
-│  │   最大 Token: [8192]  [输入框]        │  │
-│  │   流式输出: [✓]  [开关]               │  │
-│  └───────────────────────────────────────┘  │
-│                                             │
-│  ┌───────────────────────────────────────┐  │
-│  │                                      │  │
-│  │         [测试连接]  [保存设置]         │  │
-│  │                                      │  │
-│  └───────────────────────────────────────┘  │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
-**设置项详细说明：**
-
-| 设置项 | 类型 | 说明 | 默认值 |
-|---|---|---|---|
-| LLM 提供商 | 单选 | OpenAI / Anthropic / Google / Ollama / Kimi / GLM / ByteDance / MiniMax / Qwen / 自定义 | Anthropic |
-| 模型 | 下拉选择/输入框 | 根据提供商动态显示可用模型；自定义模式时为输入框 | claude-sonnet-4-6 |
-| Base URL | 输入框 | 自定义 API 基础地址，自定义/Ollama 模式时显示 | 空 |
-| API Key | 密码输入 | LLM 服务的 API Key | 空 |
-| 温度 | 滑块（0-1） | 控制生成多样性，越低越确定性 | 0.7 |
-| 最大 Token | 输入框 | 单次调用的最大 Token 数 | 8192 |
-| 流式输出 | 开关 | 是否启用流式响应 | 开启 |
-
-**模型选项列表：**
-
-**OpenAI：**
-- gpt-4o（推荐）
-- gpt-4-turbo
-- gpt-4
-- gpt-3.5-turbo
-
-**Anthropic：**
-- claude-sonnet-4-6（推荐）
-- claude-3-5-sonnet
-- claude-3-opus
-- claude-3-sonnet
-
-**Google：**
-- gemini-1.5-pro（推荐）
-- gemini-1.5-flash
-- gemini-pro
-
-**Ollama（本地）：**
-- llama3
-- mistral
-- phi3
-- qwen
-
-**Kimi（国产）：**
-- kimi（推荐）
-- kimi-8k
-- kimi-32k
-- kimi-128k
-
-**GLM（国产）：**
-- glm-4（推荐）
-- glm-4-9b
-- glm-3-turbo
-- glm-3-9b
-
-**ByteDance（国产）：**
-- doubao（推荐）
-- doubao-pro
-- doubao-lite
-
-**MiniMax（国产）：**
-- abab6-chat（推荐）
-- abab5.5-chat
-- abab5-chat
-
-**Qwen（国产）：**
-- qwen-2.5（推荐）
-- qwen-2
-- qwen-plus
-- qwen-turbo
-- qwen-long
-
-**自定义：**
-- 输入任意模型名称 + Base URL
-
-**测试连接功能：**
-
-点击"测试连接"按钮后，平台会发送一个简单的测试请求到所选 LLM，验证配置是否正确：
-
-```
-用户点击测试连接
-    ↓
-平台调用 LLM API（发送简单消息："Hello"）
-    ↓
-[成功] → 显示"连接成功"提示
-[失败] → 显示错误信息（API Key 错误 / 网络问题等）
-```
-
-**保存设置功能：**
-
-- 设置保存在平台全局配置中（非项目级别）
-- 支持通过环境变量覆盖（优先使用环境变量）
-- 保存后立即生效，新对话使用新配置
-
-**设置优先级：**
-
-1. 环境变量（最高优先级）
-2. 设置页面配置
-3. 默认值（最低优先级）
-
-**API 接口定义：**
-
-| 接口 | 方法 | 路径 | 说明 |
-|---|---|---|---|
-| 获取设置 | GET | /api/settings | 获取当前 LLM 设置 |
-| 更新设置 | PUT | /api/settings | 更新 LLM 设置 |
-| 测试连接 | POST | /api/settings/test | 测试 LLM 连接 |
-
-**请求体格式（更新设置）：**
-
-```json
-{
-  "llm_provider": "anthropic",
-  "llm_model": "claude-sonnet-4-6",
-  "api_key": "sk-xxx",
-  "base_url": "",
-  "temperature": 0.7,
-  "max_tokens": 8192,
-  "streaming": true
-}
-```
-
-**响应体格式：**
-
-```json
-{
-  "status": "success",
-  "settings": {
-    "llm_provider": "anthropic",
-    "llm_model": "claude-sonnet-4-6",
-    "api_key": "",
-    "base_url": "",
-    "temperature": 0.7,
-    "max_tokens": 8192,
-    "streaming": true
-  },
-  "updated_at": "2026-06-28T10:00:00Z"
-}
-```
-
-**说明：** API Key 在响应中始终返回空字符串，确保不泄露敏感信息。API Key 仅在测试连接和调用 LLM 时内部使用。
-
-**测试连接响应：**
-
-```json
-{
-  "status": "success",
-  "message": "LLM 连接测试成功",
-  "provider": "anthropic",
-  "model": "claude-sonnet-4-6",
-  "response_time": 1200
-}
-```
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| requirements | string | 需求描述，用户通过自然语言描述项目需求 |
+| tech_stack.backend | string | 后端技术选型（python / java / go / rust） |
+| tech_stack.frontend | string | 前端技术选型（react / vue / typescript） |
+| tech_stack.database | string | 数据库选型（postgresql / mysql / sqlite / mongodb） |
+| deployment | string | 部署形式（local_docker / k8s_helm / spring_cloud） |
 
 ---
 
@@ -585,7 +434,7 @@ LLM 追问（每次只问一个问题，避免用户压力）
 
 #### 5.1.7 数据模型定义
 
-**PostgreSQL 表结构：**
+**SQLite 表结构：**
 
 **projects 表：**
 
@@ -596,6 +445,7 @@ LLM 追问（每次只问一个问题，避免用户压力）
 | description | string | 否 | 项目描述 |
 | current_phase | string | 是 | 当前阶段（prd/tech/prototype/scaffold/code/test/deploy） |
 | prd_version | int | 是 | 当前 PRD 版本号 |
+| onboarding_data | JSON | 否 | 模板向导数据（需求描述、技术选型、部署形式） |
 | created_at | datetime | 是 | 创建时间 |
 | updated_at | datetime | 是 | 更新时间 |
 
@@ -635,20 +485,14 @@ LLM 追问（每次只问一个问题，避免用户压力）
 | change_summary | string | 否 | 这次改了什么 |
 | created_at | datetime | 是 | 创建时间 |
 
-**llm_settings 表（全局配置）：**
+**RAG 向量数据库（ChromaDB）：**
 
-| 字段 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| id | UUID | 是 | 主键 |
-| llm_provider | string | 是 | LLM 提供商（openai / anthropic / google / ollama / kimi / glm / bytedance / minimax / qwen / custom） |
-| llm_model | string | 是 | 模型名称 |
-| api_key | text | 否 | API Key（加密存储） |
-| base_url | string | 否 | 自定义 API 基础地址 |
-| temperature | float | 是 | 温度参数（0-1） |
-| max_tokens | int | 是 | 最大 Token 数 |
-| streaming | boolean | 是 | 是否启用流式输出 |
-| created_at | datetime | 是 | 创建时间 |
-| updated_at | datetime | 是 | 更新时间 |
+RAG 数据存储在 ChromaDB 向量数据库中，不存储在 SQLite：
+
+| Collection | 用途 | 字段 |
+|---|---|---|
+| long_term | 长期记忆（模板数据、PRD、技术文档） | project_id, content, metadata |
+| medium_term | 中期记忆（对话摘要、关键决策点） | project_id, content, metadata |
 
 **本地文件系统结构：**
 
@@ -777,16 +621,28 @@ docs/
 | 对比版本 | GET | /api/projects/{name}/versions/diff | 对比两个版本的差异 |
 | 回滚版本 | POST | /api/projects/{name}/versions/{version}/rollback | 回滚到指定版本 |
 
-#### 5.1.11 对话上下文持久化机制
+#### 5.1.11 对话上下文持久化机制（三层记忆架构）
 
-LLM 本身没有记忆，平台需要把每一轮对话都存下来，下次恢复时把历史消息重新注入。
+LLM 本身没有记忆，平台需要把每一轮对话都存下来，下次恢复时把历史消息重新注入。平台采用三层记忆架构：
+
+**三层记忆策略：**
+
+```
+长期记忆（模板数据、PRD、技术文档）→ ChromaDB 语义检索
+    +
+中期记忆（对话摘要、关键决策点）→ ChromaDB 相似度检索
+    +
+短期记忆（最近 N 轮对话，默认 N=10）→ SQLite 直接读取
+    ↓
+三者合并注入下一次 LLM 调用
+```
 
 **持久化流程：**
 
 ```
 每一轮对话
     ↓
-立即持久化到数据库
+立即持久化到 SQLite（短期记忆）
     ↓
 存储内容：
     - role（user / assistant / system）
@@ -796,23 +652,30 @@ LLM 本身没有记忆，平台需要把每一轮对话都存下来，下次恢�
     - token_count（用于控制上下文窗口大小）
 ```
 
-**两层记忆策略：**
-
-长对话有 token 限制，不能把所有历史都塞进去。解决方案是两层记忆：
+**长期记忆存储：**
 
 ```
-短期记忆（最近 N 轮对话，默认 N=20）
-    +
-长期记忆摘要（LLM 定期总结之前的对话要点）
+项目创建时
     ↓
-两者合并注入下一次 LLM 调用
+模板数据（需求描述、技术选型、部署形式）存入 ChromaDB long_term
+    ↓
+PRD 生成后
+    ↓
+PRD 内容存入 ChromaDB long_term
 ```
 
-**摘要触发时机：**
+**中期记忆存储：**
 
-1. 每 20 轮对话自动触发一次摘要
+```
+摘要触发时机：
+1. 每 10 轮对话自动触发一次摘要
 2. 累计 token 数超过阈值（默认 8000）时触发
 3. 用户手动触发
+    ↓
+LLM 生成对话摘要
+    ↓
+摘要内容存入 ChromaDB medium_term
+```
 
 **摘要内容结构：**
 
@@ -836,14 +699,22 @@ LLM 本身没有记忆，平台需要把每一轮对话都存下来，下次恢�
 ```
 恢复项目时
     ↓
-读取该项目的所有对话摘要（长期记忆）
+读取该项目的所有对话摘要（中期记忆，从 ChromaDB 检索）
     ↓
-读取最近 N 轮对话（短期记忆）
+读取最近 N 轮对话（短期记忆，从 SQLite 读取）
+    ↓
+检索长期记忆（从 ChromaDB 检索与当前话题相关的模板数据和 PRD）
     ↓
 合并为完整上下文
     ↓
 注入 LLM 调用
 ```
+
+**降级策略：**
+
+当 RAG 服务不可用时（如向量数据库未初始化），系统自动降级：
+- 使用项目的 `onboarding_data` 作为系统提示
+- 仅使用短期记忆和中期记忆（从 SQLite 读取）
 
 **API 接口定义：**
 
@@ -1845,31 +1716,62 @@ output_schema:
 | 层级 | 技术选择 | 原因 |
 |---|---|---|
 | 后端 | Python + FastAPI | LLM 生态最丰富，开发效率高 |
-| 数据库 | PostgreSQL + SQLAlchemy | 稳定可靠 |
-| 缓存 | Redis | 会话状态、任务队列 |
+| 数据库 | SQLite + SQLAlchemy | 零部署、开箱即用、适合轻量级应用 |
+| 向量数据库 | ChromaDB | 嵌入式、轻量级、支持语义检索 |
 | 前端 | TypeScript + React + Vite | 统一前端技术栈 |
-| UI | shadcn/ui + Tailwind | 现代、定制灵活 |
+| UI | Tailwind CSS 4.3+ | 现代、定制灵活、无需配置文件 |
 | LLM 适配 | LiteLLM（统一多 LLM 接口） | 一套代码接所有 LLM |
-| 任务队列 | Celery + Redis | 长时间代码生成任务异步处理 |
 | 测试执行 | subprocess + Docker | 隔离环境运行生成的测试 |
 
 ### 9.2 生成目标技术栈（DevSmart 能生成的）
 
 见 Phase 2 Section 5.2.3 技术栈选项库。
 
+### 9.3 数据库迁移说明
+
+**当前版本：** 使用 SQLite 作为默认数据库，无需额外部署。
+
+**未来版本：** 支持 PostgreSQL 作为可选数据库，通过环境变量配置切换：
+
+```bash
+# SQLite（默认）
+DATABASE_URL=sqlite:///./devsmart.db
+
+# PostgreSQL（可选）
+DATABASE_URL=postgresql://user:password@localhost/devsmart
+```
+
 ---
 
 ## 10. 里程碑计划
 
-| 里程碑 | 包含功能 | 目标 |
-|---|---|---|
-| M1: 核心对话 | Phase 1 完整流程（对话 + PRD 生成） | 能生成高质量双版本 PRD |
-| M2: 技术选型 | Phase 2 完整流程（推荐 + 验证） | 能生成技术方案文档 |
-| M3: 原型生成 | Phase 3 完整流程 | 能生成可预览的 HTML 原型 |
-| M4: 脚手架 | Phase 4 步骤一（骨架生成） | 能生成完整工程目录和接口定义 |
-| M5: 代码生成 | Phase 4 步骤二（逐模块生成） | 能生成可运行代码（Go 技术栈优先） |
-| M6: 测试闭环 | Phase 5 完整流程（生成 + 自动修复） | 测试通过率 > 80% |
-| M7: 部署配置 | Phase 6 完整流程 | 能生成可用的 Helm Chart 和 CI/CD |
+| 里程碑 | 包含功能 | 目标 | 状态 |
+|---|---|---|---|
+| M1: 项目管理 | Phase 0 完整流程（项目创建/列表/恢复 + 模板向导） | 能创建项目并填写初始需求 | ✅ 已完成 |
+| M2: 核心对话与 PRD | Phase 1 完整流程（对话 + PRD 生成 + 下载） | 能生成并下载双版本 PRD，可交付给 Code Agent | ✅ 已完成 |
+| M3: 技术选型 | Phase 2 完整流程（推荐 + 验证） | 能生成技术方案文档 | ⏳ 待开发 |
+| M4: 原型生成 | Phase 3 完整流程 | 能生成可预览的 HTML 原型 | ⏳ 待开发 |
+| M5: 脚手架 | Phase 4 步骤一（骨架生成） | 能生成完整工程目录和接口定义 | ⏳ 待开发 |
+| M6: 代码生成 | Phase 4 步骤二（逐模块生成） | 能生成可运行代码（Go 技术栈优先） | ⏳ 待开发 |
+| M7: 测试闭环 | Phase 5 完整流程（生成 + 自动修复） | 测试通过率 > 80% | ⏳ 待开发 |
+| M8: 部署配置 | Phase 6 完整流程 | 能生成可用的 Helm Chart 和 CI/CD | ⏳ 待开发 |
+
+### 当前版本特性
+
+**已实现：**
+- 项目管理（创建、列表、恢复）
+- 模板向导（需求描述、技术选型、部署形式）
+- 需求澄清对话流程
+- 双版本 PRD 生成（Human PRD + Machine PRD）
+- PRD 下载功能
+- RAG 三层记忆架构（长期/中期/短期）
+- ChromaDB 向量数据库集成
+- 对话摘要生成与存储
+
+**核心价值：**
+- 用户通过模板向导和对话澄清需求
+- 平台生成结构化 PRD 文档
+- 用户下载 PRD 后可交给任何 Code Agent 进行代码生成
 
 ---
 
