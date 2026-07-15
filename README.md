@@ -10,6 +10,8 @@ DevSmart 是一个基于 LLM 驱动的软件开发平台，帮助团队从需求
 - **工作流引擎** - YAML 定义工作流，按步骤执行多个技能
 - **模板系统** - 支持通用 SaaS、电商、移动应用、API 服务等 PRD 模板
 - **技术栈推荐** - 基于约束分析生成技术栈建议和 ADR
+- **三层记忆架构** - 基于 RAG 的长期/中期/短期记忆，提升对话上下文理解能力
+- **模板向导** - 创建项目时填写需求模板，包括需求描述、技术选型、部署形式等
 
 ## 技术栈
 
@@ -17,9 +19,10 @@ DevSmart 是一个基于 LLM 驱动的软件开发平台，帮助团队从需求
 - Python 3.11+
 - FastAPI 0.104+
 - SQLAlchemy 2.0+
-- PostgreSQL (asyncpg)
+- SQLite (默认) / PostgreSQL (可选)
 - LiteLLM (多提供商 LLM 适配)
 - Pydantic
+- ChromaDB (向量数据库，RAG)
 
 ### 前端
 - React 18+
@@ -28,6 +31,7 @@ DevSmart 是一个基于 LLM 驱动的软件开发平台，帮助团队从需求
 - React Router DOM
 - React Markdown (Markdown 渲染)
 - Axios (HTTP 客户端)
+- Tailwind CSS 4.3+
 
 ## 目录结构
 
@@ -38,6 +42,7 @@ devsmart/
 │   ├── models/                 # 数据库模型
 │   ├── routers/                # API 路由
 │   ├── services/               # 业务逻辑服务
+│   │   └── rag_service.py      # RAG 向量检索服务
 │   ├── skills/                 # 技能系统
 │   │   ├── prd/                # PRD 相关技能
 │   │   ├── requirement/        # 需求相关技能
@@ -48,11 +53,14 @@ devsmart/
 ├── frontend/                   # 前端应用
 │   └── src/
 │       ├── components/         # React 组件
+│       │   └── OnboardingWizard.tsx  # 模板填写向导
 │       ├── pages/              # 页面组件
 │       ├── services/           # API 服务
 │       └── types/              # TypeScript 类型定义
 ├── database/                   # 数据库 schema
 ├── projects/                   # 项目文件存储
+├── docs/                       # 文档
+│   └── onboarding_context_design.md  # RAG 三层记忆架构设计文档
 └── tests/                      # 测试用例
 ```
 
@@ -62,7 +70,6 @@ devsmart/
 
 - Python 3.11+
 - Node.js 18+
-- PostgreSQL 15+
 
 ### 1. 克隆项目
 
@@ -87,7 +94,6 @@ venv\Scripts\activate     # Windows
 
 ```bash
 pip install -r requirements.txt
-pip install -r requirements-skills.txt
 ```
 
 #### 配置环境变量
@@ -101,8 +107,8 @@ cp .env.example .env
 编辑 `.env` 文件，配置以下关键项：
 
 ```env
-# 数据库配置
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/devsmart
+# 数据库配置 - 默认使用 SQLite，无需额外安装
+DATABASE_URL=sqlite+aiosqlite:///./devsmart.db
 
 # LLM 配置 - 支持 OpenAI、Anthropic、Google 等多种提供商
 LLM_PROVIDER=openai
@@ -114,9 +120,19 @@ APP_NAME=DevSmart
 APP_VERSION=1.0.0
 DEBUG=true
 PORT=8000
+
+# 对话配置
+CONVERSATION_SHORT_TERM_LIMIT=10
 ```
 
 **注意**：`.env` 文件包含敏感信息，请确保它已添加到 `.gitignore` 中，不要提交到版本控制。
+
+**数据库说明**：
+- 默认使用 SQLite，无需额外安装数据库服务
+- 如果需要使用 PostgreSQL，将 `DATABASE_URL` 改为：
+  ```env
+  DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/devsmart
+  ```
 
 #### 数据库初始化
 
@@ -223,8 +239,12 @@ docker-compose up -d
 
 1. 访问 `http://localhost:5173`
 2. 点击「创建项目」
-3. 输入项目名称和描述
-4. 选择 PRD 模板（可选）
+3. 在模板向导中填写：
+   - **需求描述**：描述项目的核心需求
+   - **后端技术选型**：选择后端语言（Python/Java/Go/Rust）
+   - **前端技术选型**：选择前端框架（React/Vue/TypeScript）
+   - **数据库选型**：选择数据库（PostgreSQL/MySQL/SQLite）
+   - **部署形式**：选择部署方式（本地/Docker/云服务）
 
 ### 2. 需求对话
 
@@ -249,12 +269,21 @@ docker-compose up -d
 
 在「技术栈」标签页选择或推荐技术栈。
 
-### 6. LLM 设置
+## RAG 三层记忆架构
 
-在「设置」标签页可以配置 LLM 参数：
-- 选择 LLM 提供商（OpenAI、Anthropic、Google 等）
-- 设置 API Key
-- 调整模型参数（温度、最大 token 等）
+DevSmart 采用基于向量数据库的三层记忆架构，提升 LLM 的上下文理解能力：
+
+| 层级 | 内容 | 存储方式 | 检索方式 |
+|------|------|---------|---------|
+| **短期记忆** | 当前对话历史（最近 10 轮） | SQLite | 直接读取 |
+| **中期记忆** | 对话摘要、关键决策点 | ChromaDB | 相似度检索 |
+| **长期记忆** | 模板数据、PRD、技术文档 | ChromaDB | 语义检索 |
+
+**工作原理**：
+1. 创建项目时，模板数据自动存入长期记忆库
+2. 对话过程中，系统实时检索相关记忆并注入上下文
+3. 定期生成对话摘要存入中期记忆库
+4. 当 RAG 服务不可用时，自动降级为传统系统提示模式
 
 ## 技能列表
 
@@ -275,6 +304,8 @@ docker-compose up -d
 | `devsmart.prd.validate-human` | Validate Human PRD | 检查 PRD 必要章节 |
 | `devsmart.prd.generate-machine` | Generate Machine PRD | 将 PRD 转为机器可读结构 |
 | `devsmart.prd.validate-consistency` | Validate PRD Consistency | 检查引用完整性和验收覆盖率 |
+| `devsmart.prd.scan` | PRD Scan | 扫描 PRD 并生成变更建议 |
+| `devsmart.prd.delta` | PRD Delta | 生成 PRD 变更增量 |
 
 ### 技术技能
 
