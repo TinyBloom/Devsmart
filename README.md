@@ -269,6 +269,15 @@ docker-compose up -d
 
 在「技术栈」标签页选择或推荐技术栈。
 
+### 6. 下载 PRD
+
+生成的 PRD 支持下载，包含两种格式：
+
+- **Human PRD** (Markdown 格式) - 面向人类评审和阅读
+- **Machine PRD** (YAML 格式) - 面向机器解析，结构化数据便于代码生成
+
+下载后可将 PRD 文档交给任何 Code Agent（如 DevInfra、Cursor、GitHub Copilot 等）来生成代码。Machine PRD 的结构化格式特别适合作为 Code Agent 的输入，包含完整的需求规格、技术约束、API 定义等信息。
+
 ## RAG 三层记忆架构
 
 DevSmart 采用基于向量数据库的三层记忆架构，提升 LLM 的上下文理解能力：
