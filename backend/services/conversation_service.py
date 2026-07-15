@@ -1,6 +1,6 @@
 """
 对话管理服务
-实现 Phase 1 对话流程，包含两层记忆策略
+实现 Phase 1 对话流程，包含三层记忆策略（基于 RAG）
 根据 DevSmart_PRD_v1.0.md Section 5.1.11 定义
 使用技能系统进行需求分析和追问生成
 """
@@ -17,6 +17,7 @@ from models.project import Project
 from services.settings_service import SettingsService
 from services.questioning_strategy import QuestioningStrategy
 from services.completeness_calculator import CompletenessCalculator
+from services.rag_service import RAGService
 from utils.llm_client import LLMClient
 from config.settings import settings
 
@@ -101,21 +102,25 @@ class ConversationService:
         self.db.add(user_message)
         await self.db.commit()
 
-        # 2. 获取对话历史（两层记忆策略）
-        conversation_history = await self._get_conversation_context(project_id, phase)
-
-        # 3. 获取项目信息
+        # 2. 获取项目信息
         project = await self._get_project(project_id)
 
-        # 4. 生成 LLM 回复
+        # 3. 获取 RAG 上下文（复用一次检索结果）
+        rag_context = await self._get_rag_context(project_id, content, project)
+
+        # 4. 获取对话历史（三层记忆策略）
+        conversation_history = await self._get_conversation_context(project_id, phase, content, project)
+
+        # 5. 生成 LLM 回复
+        full_context = rag_context + conversation_history
         assistant_response = await self._generate_llm_response(
-            conversation_history,
+            full_context,
             content,
             project.name if project else "未命名项目"
         )
 
-        # 5. 使用技能系统分析需求缺口和完整度
-        all_conversations = conversation_history + [{"role": "user", "content": content}]
+        # 6. 使用技能系统分析需求缺口和完整度
+        all_conversations = rag_context + conversation_history + [{"role": "user", "content": content}]
         
         try:
             context = SkillContext(project_id=project_id)
@@ -188,37 +193,80 @@ class ConversationService:
             "is_ready_for_prd": completeness_result["is_complete"]
         }
 
+    async def _get_rag_context(
+        self,
+        project_id: str,
+        user_input: str,
+        project: Optional[Project] = None
+    ) -> List[Dict]:
+        """
+        获取 RAG 上下文（长期记忆 + 中期记忆）
+
+        Args:
+            project_id: 项目 ID
+            user_input: 用户当前输入（用于 RAG 检索）
+            project: 项目对象（用于降级回退时获取 onboarding_data）
+
+        Returns:
+            RAG 上下文列表
+        """
+        context = []
+        rag_service = RAGService()
+
+        # 1. 长期记忆：RAG 检索项目知识库
+        rag_has_results = False
+        if user_input:
+            long_term_results = await rag_service.query_long_term(project_id, user_input)
+            if long_term_results:
+                rag_has_results = True
+                for result in long_term_results:
+                    doc_type = result["metadata"].get("type", "文档")
+                    context.append({
+                        "role": "system",
+                        "content": f"【项目知识 - {doc_type}】\n{result['content']}"
+                    })
+
+        # 降级回退：如果 RAG 没有返回结果，使用 onboarding_data 作为系统提示
+        if not rag_has_results and project and project.onboarding_data:
+            system_prompt = self._format_onboarding_as_system_prompt(project.onboarding_data)
+            context.append({
+                "role": "system",
+                "content": system_prompt
+            })
+
+        # 2. 中期记忆：RAG 检索对话摘要
+        if user_input:
+            medium_term_results = await rag_service.query_medium_term(project_id, user_input)
+            for result in medium_term_results:
+                context.append({
+                    "role": "system",
+                    "content": f"【历史对话摘要】\n{result['content']}"
+                })
+
+        return context
+
     async def _get_conversation_context(
         self,
         project_id: str,
-        phase: str
+        phase: str,
+        user_input: str = "",
+        project: Optional[Project] = None
     ) -> List[Dict]:
         """
-        获取对话上下文（两层记忆策略）
+        获取对话上下文（短期记忆）
 
         Args:
             project_id: 项目 ID
             phase: 阶段
+            user_input: 用户当前输入
+            project: 项目对象
 
         Returns:
-            对话历史列表（短期记忆 + 长期摘要）
+            对话历史列表（短期记忆）
         """
-        # 1. 获取长期记忆摘要
-        summaries_query = select(ConversationSummary).where(
-            ConversationSummary.project_id == project_id,
-            ConversationSummary.phase == phase
-        ).order_by(ConversationSummary.created_at.desc())
-        summaries_result = await self.db.execute(summaries_query)
-        summaries = summaries_result.scalars().all()
+        context = []
 
-        long_term_memory = []
-        for summary in summaries:
-            long_term_memory.append({
-                "role": "system",
-                "content": f"[历史对话摘要]: {summary.summary}"
-            })
-
-        # 2. 获取短期记忆（最近 N 轮对话）
+        # 短期记忆：最近 N 轮对话
         short_term_limit = settings.conversation_short_term_limit
         recent_query = select(Conversation).where(
             Conversation.project_id == project_id,
@@ -227,17 +275,27 @@ class ConversationService:
         recent_result = await self.db.execute(recent_query)
         recent_conversations = recent_result.scalars().all()
 
-        short_term_memory = []
         for conv in reversed(recent_conversations):
-            short_term_memory.append({
+            context.append({
                 "role": conv.role,
                 "content": conv.content
             })
 
-        # 3. 合并记忆
-        context = long_term_memory + short_term_memory
-
         return context
+
+    def _format_onboarding_as_system_prompt(self, onboarding_data: Dict) -> str:
+        """将 onboarding_data 格式化为系统提示"""
+        parts = [
+            "【项目背景信息】",
+            f"需求描述：{onboarding_data.get('requirement_description', '未提供')}",
+            f"后端技术：{onboarding_data.get('backend_tech', '未选择')}",
+            f"前端技术：{onboarding_data.get('frontend_tech', '未选择')}",
+            f"数据库：{onboarding_data.get('database', '未选择')}",
+            f"部署形式：{onboarding_data.get('deployment', '未选择')}",
+            "",
+            "请基于以上项目背景进行回答。"
+        ]
+        return "\n".join(parts)
 
     async def _generate_llm_response(
         self,
@@ -323,7 +381,7 @@ class ConversationService:
 
             summary_content = await client.generate_summary(conversation_list)
 
-            # 保存摘要
+            # 保存摘要到数据库
             last_conv = recent_conversations[-1]
             summary = ConversationSummary(
                 project_id=project_id,
@@ -334,6 +392,19 @@ class ConversationService:
             )
             self.db.add(summary)
             await self.db.commit()
+
+            # 存入中期记忆库（RAG）
+            rag_service = RAGService()
+            await rag_service.add_medium_term_document(
+                project_id=str(project_id),
+                content=summary_content,
+                metadata={
+                    "type": "conversation_summary",
+                    "phase": phase,
+                    "covers_up_to_id": str(last_conv.id),
+                    "created_at": datetime.utcnow().isoformat()
+                }
+            )
 
     async def _get_project(self, project_id: str) -> Optional[Project]:
         """获取项目信息"""

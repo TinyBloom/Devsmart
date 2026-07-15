@@ -20,188 +20,132 @@ export function ProjectList({
   searchQuery,
   onSearchChange,
 }: ProjectListProps) {
+  const getPhaseColor = (phase: string) => {
+    switch (phase) {
+      case 'prd':
+        return 'bg-emerald-100 text-emerald-700';
+      case 'tech':
+        return 'bg-[#E3F2FD] text-[#2496ED]';
+      case 'code':
+        return 'bg-amber-100 text-amber-700';
+      case 'test':
+        return 'bg-purple-100 text-purple-700';
+      case 'deploy':
+        return 'bg-orange-100 text-orange-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getPhaseLabel = (phase: string) => {
+    switch (phase) {
+      case 'prd':
+        return 'PRD';
+      case 'tech':
+        return '技术设计';
+      case 'code':
+        return '开发';
+      case 'test':
+        return '测试';
+      case 'deploy':
+        return '部署';
+      default:
+        return phase;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(date);
+    } catch {
+      return dateString;
+    }
+  };
+
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, project: Project) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelectProject(project);
+    }
+  };
+
   return (
-    <div className="project-list">
+    <div className="w-full">
       {/* 搜索框 */}
-      <div className="search-bar">
+      <div className="mb-6">
+        <label htmlFor="project-search" className="sr-only">搜索项目</label>
         <input
+          id="project-search"
           type="text"
-          placeholder="搜索项目..."
+          name="project-search"
+          placeholder="搜索项目…"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="search-input"
+          spellCheck={false}
+          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#2496ED] focus:border-[#2496ED] transition-[border-color,ring-color] duration-200"
+          aria-label="搜索项目"
         />
       </div>
 
       {/* 项目列表 */}
-      <div className="projects-grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {projects.length === 0 ? (
-          <div className="no-projects">
-            <p>暂无项目，点击"新建项目"开始</p>
+          <div className="col-span-full flex flex-col items-center justify-center py-24 text-gray-500">
+            <p className="text-xl font-medium text-gray-900">暂无项目</p>
+            <p className="text-gray-500 mt-2">点击左侧"创建新项目"开始您的 AI 开发之旅</p>
           </div>
         ) : (
           projects.map((project) => (
             <div
               key={project.id}
-              className="project-card"
+              role="button"
+              tabIndex={0}
               onClick={() => onSelectProject(project)}
+              onKeyDown={(e) => handleCardKeyDown(e, project)}
+              className="w-full text-left bg-white border border-gray-200 rounded-lg p-6 hover:border-[#2496ED] hover:shadow-md transition-[border-color,box-shadow] duration-200 group focus-visible:ring-2 focus-visible:ring-[#2496ED] focus-visible:ring-offset-2 cursor-pointer"
+              aria-label={`选择项目 ${project.name}`}
             >
-              <div className="project-header">
-                <h3 className="project-name">{project.name}</h3>
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#2496ED]">
+                  {project.name}
+                </h3>
                 <button
-                  className="delete-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDeleteProject(project.name);
                   }}
+                  className="px-3 py-1.5 text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                  aria-label={`删除项目 ${project.name}`}
                 >
                   删除
                 </button>
               </div>
 
-              <div className="project-info">
-                <div className="info-item">
-                  <label>当前阶段</label>
-                  <span className={`phase-badge ${project.current_phase}`}>
-                    {project.current_phase}
-                  </span>
-                </div>
+              {project.description && (
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+              )}
 
-                <div className="info-item">
-                  <label>PRD 版本</label>
-                  <span>v{project.prd_version}</span>
-                </div>
-
-                <div className="info-item">
-                  <label>最后修改</label>
-                  <span>{new Date(project.updated_at).toLocaleString()}</span>
-                </div>
+              <div className="flex items-center gap-3 text-sm">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getPhaseColor(project.current_phase)}`}>
+                  {getPhaseLabel(project.current_phase)}
+                </span>
+                <span className="text-gray-500">v{project.prd_version}</span>
               </div>
 
-              {project.description && (
-                <p className="project-description">{project.description}</p>
-              )}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <span className="text-xs text-gray-400">
+                  更新于 {formatDate(project.updated_at)}
+                </span>
+              </div>
             </div>
           ))
         )}
       </div>
-
-      <style>{`
-        .project-list {
-          padding: 20px;
-        }
-
-        .search-bar {
-          margin-bottom: 20px;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 10px 15px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          font-size: 14px;
-        }
-
-        .projects-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 20px;
-        }
-
-        .project-card {
-          border: 1px solid #ddd;
-          border-radius: 12px;
-          padding: 20px;
-          cursor: pointer;
-          transition: all 0.2s;
-          background: white;
-        }
-
-        .project-card:hover {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          transform: translateY(-2px);
-        }
-
-        .project-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 15px;
-        }
-
-        .project-name {
-          font-size: 18px;
-          font-weight: 600;
-          color: #333;
-        }
-
-        .delete-btn {
-          padding: 5px 10px;
-          background: #ff4444;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 12px;
-        }
-
-        .delete-btn:hover {
-          background: #cc0000;
-        }
-
-        .project-info {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-          margin-bottom: 15px;
-        }
-
-        .info-item {
-          display: flex;
-          flex-direction: column;
-          gap: 3px;
-        }
-
-        .info-item label {
-          font-size: 12px;
-          color: #888;
-        }
-
-        .info-item span {
-          font-size: 14px;
-          color: #333;
-        }
-
-        .phase-badge {
-          padding: 3px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          background: #e0e0e0;
-        }
-
-        .phase-badge.prd {
-          background: #4CAF50;
-          color: white;
-        }
-
-        .phase-badge.tech {
-          background: #2196F3;
-          color: white;
-        }
-
-        .project-description {
-          font-size: 13px;
-          color: #666;
-          margin-top: 10px;
-        }
-
-        .no-projects {
-          text-align: center;
-          padding: 40px;
-          color: #888;
-        }
-      `}</style>
     </div>
   );
 }

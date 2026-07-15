@@ -4,12 +4,13 @@ Project Router
 根据 DevSmart_PRD_v1.0.md Section 5.0.6 定义
 """
 
-from typing import Optional
+from typing import Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, Field
 
 from models.database import get_db_session
+from models.project import ProjectType
 from services.project_service import ProjectService
 from services.conversation_service import ConversationService
 
@@ -22,6 +23,9 @@ class ProjectCreateRequest(BaseModel):
     """创建项目请求"""
     name: str = Field(..., min_length=3, max_length=64, pattern=r'^[a-zA-Z0-9_-]+$')
     description: Optional[str] = None
+    project_type: Optional[str] = ProjectType.GREENFIELD
+    source_path: Optional[str] = None
+    onboarding_data: Optional[Dict] = None
 
 
 class ProjectUpdateRequest(BaseModel):
@@ -29,6 +33,9 @@ class ProjectUpdateRequest(BaseModel):
     description: Optional[str] = None
     current_phase: Optional[str] = None
     prd_version: Optional[int] = None
+    project_type: Optional[str] = None
+    source_path: Optional[str] = None
+    onboarding_data: Optional[Dict] = None
 
 
 class ProjectResponse(BaseModel):
@@ -38,6 +45,8 @@ class ProjectResponse(BaseModel):
     description: Optional[str]
     current_phase: str
     prd_version: int
+    project_type: str
+    source_path: Optional[str]
     created_at: str
     updated_at: str
 
@@ -57,10 +66,26 @@ async def create_project(
     """创建新项目"""
     service = ProjectService(db)
     try:
-        project = await service.create_project(request.name, request.description)
+        project = await service.create_project(
+            request.name, 
+            request.description,
+            request.project_type,
+            request.source_path,
+            request.onboarding_data
+        )
         return ProjectResponse(**project.to_dict())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/onboarding/template")
+async def get_onboarding_template(
+    db: AsyncSession = Depends(get_db_session)
+):
+    """获取 onboarding 模板配置"""
+    service = ProjectService(db)
+    template = await service.get_onboarding_template()
+    return template
 
 
 @router.get("", response_model=list[ProjectResponse])
@@ -194,4 +219,66 @@ async def get_project_prd(
         "content": prd.content,
         "change_summary": prd.change_summary,
         "created_at": prd.created_at.isoformat()
+    }
+
+
+class DeltaPrdRequest(BaseModel):
+    """增量 PRD 生成请求"""
+    conversation_history: list[Dict] = Field(..., description="对话历史记录")
+    previous_prd_path: Optional[str] = None
+
+
+@router.post("/{name}/scan")
+async def scan_project(
+    name: str,
+    db: AsyncSession = Depends(get_db_session)
+):
+    """扫描现有项目结构"""
+    service = ProjectService(db)
+    result = await service.scan_project(name)
+    
+    if result.get("status") == "ERROR":
+        raise HTTPException(status_code=400, detail=result["message"])
+    
+    return result
+
+
+@router.post("/{name}/delta-prd")
+async def generate_delta_prd(
+    name: str,
+    request: DeltaPrdRequest,
+    db: AsyncSession = Depends(get_db_session)
+):
+    """生成增量 PRD"""
+    service = ProjectService(db)
+    result = await service.generate_delta_prd(
+        name,
+        request.conversation_history,
+        request.previous_prd_path
+    )
+    
+    if result.get("status") == "ERROR":
+        raise HTTPException(status_code=400, detail=result["message"])
+    
+    return result
+
+
+@router.get("/{name}/prd-history")
+async def get_prd_history(
+    name: str,
+    db: AsyncSession = Depends(get_db_session)
+):
+    """获取项目 PRD 历史版本"""
+    service = ProjectService(db)
+    project = await service.get_project_by_name(name)
+    
+    if not project:
+        raise HTTPException(status_code=404, detail=f"项目 '{name}' 不存在")
+    
+    history = await service.get_project_prd_history(name)
+    
+    return {
+        "project": name,
+        "versions": history,
+        "total": len(history)
     }

@@ -1,0 +1,49 @@
+name: "增量 PRD 生成"
+id: "devsmart.prd.delta"
+version: "1.0.0"
+description: "为现有项目生成增量 PRD，支持新增功能和 Bug 修复"
+category: "prd"
+
+inputs:
+  - name: project_dir
+    type: string
+    description: "项目目录路径"
+    required: true
+  - name: project_name
+    type: string
+    description: "项目名称"
+    required: true
+  - name: conversation_history
+    type: array
+    description: "对话历史记录"
+    required: true
+  - name: previous_prd_path
+    type: string
+    description: "历史 PRD 文件路径（可选）"
+    required: false
+
+outputs:
+  - name: status
+    type: string
+    description: "执行状态: SUCCESS 或 ERROR"
+  - name: message
+    type: string
+    description: "执行结果消息"
+  - name: version
+    type: integer
+    description: "生成的 PRD 版本号"
+  - name: delta_type
+    type: string
+    description: "变更类型: FEATURE_ADDITION, BUG_FIX, REFACTOR, ENHANCEMENT"
+  - name: artifacts
+    type: array
+    description: "生成的文件列表"
+  - name: completeness
+    type: object
+    description: "需求完整度评估"
+
+dependencies:
+  - devsmart.prd.generate
+
+execution_type: "async"
+requires_llm: true

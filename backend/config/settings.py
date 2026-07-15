@@ -30,10 +30,13 @@ class Settings(BaseSettings):
     )
 
     # 项目存储路径
-    projects_dir: Path = Path(os.getenv("PROJECTS_DIR", "/home/bxf123/workspace/devsmart/projects"))
+    projects_dir: Path = Path(os.getenv("PROJECTS_DIR", "/home/bxf123/workspace/Devsmart/projects"))
     
     # 应用基础目录
     base_dir: Path = Path(__file__).resolve().parent.parent
+    
+    # 模板目录
+    templates_dir: Path = base_dir / "templates"
 
     # LLM 配置（环境变量优先）
     llm_provider: str = os.getenv("LLM_PROVIDER", "anthropic")

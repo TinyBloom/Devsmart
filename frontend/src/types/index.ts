@@ -2,14 +2,46 @@
  * DevSmart Frontend Types
  */
 
+export type ProjectType = 'greenfield' | 'incremental';
+
 export interface Project {
   id: string;
   name: string;
   description?: string;
   current_phase: string;
   prd_version: number;
+  project_type: ProjectType;
+  source_path?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface OnboardingOption {
+  value: string;
+  label: string;
+  description: string;
+}
+
+export interface OnboardingSection {
+  type: 'textarea' | 'select';
+  label: string;
+  placeholder?: string;
+  required: boolean;
+  max_length?: number;
+  options?: OnboardingOption[];
+}
+
+export interface OnboardingTemplate {
+  template_version: string;
+  sections: Record<string, OnboardingSection>;
+}
+
+export interface OnboardingData {
+  requirement_description: string;
+  backend_tech: string;
+  frontend_tech: string;
+  database: string;
+  deployment: string;
 }
 
 export interface LLMSettings {

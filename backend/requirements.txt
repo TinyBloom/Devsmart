@@ -26,5 +26,8 @@ pyyaml  # YAML parsing
 # Security
 cryptography  # API Key encryption
 
+# RAG (Vector Database)
+chromadb>=0.4.0
+
 # Development
 httpx  # HTTP client for testing

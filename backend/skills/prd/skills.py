@@ -437,3 +437,66 @@ class FixCodeFromFailureSkill(LLMSkill):
     async def execute(self, context: SkillContext, skill_input: FixCodeFromFailureInput) -> SkillResult:
         result = await super().execute(context, skill_input)
         return result
+
+
+class GenerateDeltaPrdInput(BaseModel):
+    project_name: str
+    previous_prd: dict[str, Any]
+    requirements: dict[str, Any]
+    delta_type: Literal["FEATURE_ADDITION", "BUG_FIX", "REFACTOR", "ENHANCEMENT"]
+
+
+class GenerateDeltaPrdOutput(BaseModel):
+    delta_type: str
+    version: int
+    previous_version: int
+    changes_summary: str
+    new_features: list[dict[str, Any]] = Field(default_factory=list)
+    bug_fixes: list[dict[str, Any]] = Field(default_factory=list)
+    enhancements: list[dict[str, Any]] = Field(default_factory=list)
+    refactors: list[dict[str, Any]] = Field(default_factory=list)
+    impacted_modules: list[str] = Field(default_factory=list)
+    related_features: list[str] = Field(default_factory=list)
+    backward_compatibility: str = "yes"
+    migration_notes: list[str] = Field(default_factory=list)
+
+
+class GenerateDeltaPrdSkill(LLMSkill):
+    manifest = SkillManifest(
+        id="devsmart.prd.generate-delta", name="Generate Delta PRD", version="1.0.0",
+        category=SkillCategory.GENERATE, description="为现有项目生成增量 PRD，支持新增功能和 Bug 修复。",
+        input_model=GenerateDeltaPrdInput, output_model=GenerateDeltaPrdOutput, tags=("prd", "delta"),
+    )
+
+    @property
+    def system_prompt(self) -> str:
+        return """根据现有 PRD 和新增需求生成增量 PRD。
+
+输入：
+- previous_prd：历史 PRD 的完整内容（机器可读格式）
+- requirements：新增需求描述
+- delta_type：变更类型（FEATURE_ADDITION/BUG_FIX/REFACTOR/ENHANCEMENT）
+
+输出：结构化的增量 PRD
+
+生成规则：
+1. 分析新增需求与现有 PRD 的关系，识别受影响的模块和关联功能
+2. 生成变更摘要，明确本次变更的核心内容
+3. 根据变更类型分类输出：
+   - new_features：新增功能列表
+   - bug_fixes：Bug 修复列表（包含问题描述、严重程度）
+   - enhancements：功能增强列表
+   - refactors：代码重构列表
+4. 分析影响范围：
+   - impacted_modules：受影响的模块名称列表
+   - related_features：关联的现有功能名称列表
+5. 评估向后兼容性，提供迁移说明
+6. 保持与历史 PRD 的一致性，不重复已有内容
+
+请输出结构化的 JSON 结果。"""
+
+    async def execute(self, context: SkillContext, skill_input: GenerateDeltaPrdInput) -> SkillResult:
+        result = await super().execute(context, skill_input)
+        content = yaml.safe_dump(result.output, allow_unicode=True, sort_keys=False)
+        result.artifacts.append(Artifact(type="delta_prd", path="prd/delta-prd.yaml", content=content, media_type="application/yaml"))
+        return result

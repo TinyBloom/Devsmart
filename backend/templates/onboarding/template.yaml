@@ -1,0 +1,77 @@
+template_version: "1.0"
+sections:
+  requirement_description:
+    type: textarea
+    label: "需求描述"
+    placeholder: "请详细描述您想要开发的功能、业务场景和期望目标..."
+    required: true
+    max_length: 5000
+
+  backend_tech:
+    type: select
+    label: "后端技术选型"
+    required: true
+    options:
+      - value: "python-fastapi"
+        label: "Python + FastAPI"
+        description: "快速开发、生态丰富、适合API服务"
+      - value: "java-spring"
+        label: "Java + Spring Boot"
+        description: "企业级、稳定可靠、生态成熟"
+      - value: "go-gin"
+        label: "Go + Gin"
+        description: "高性能、轻量级、适合微服务"
+      - value: "rust-axum"
+        label: "Rust + Axum"
+        description: "内存安全、极致性能、适合系统级服务"
+
+  frontend_tech:
+    type: select
+    label: "前端技术选型"
+    required: true
+    options:
+      - value: "vue-ts"
+        label: "Vue 3 + TypeScript"
+        description: "渐进式、易学易用、社区活跃"
+      - value: "react-ts"
+        label: "React + TypeScript"
+        description: "生态最丰富、组件化开发、灵活度高"
+      - value: "angular"
+        label: "Angular"
+        description: "全功能框架、企业级应用、TypeScript原生"
+
+  database:
+    type: select
+    label: "数据库选择"
+    required: true
+    options:
+      - value: "postgresql"
+        label: "PostgreSQL"
+        description: "功能强大、支持JSON、适合复杂查询"
+      - value: "mysql"
+        label: "MySQL"
+        description: "性能优异、成熟稳定、生态广泛"
+      - value: "sqlite"
+        label: "SQLite"
+        description: "轻量级、文件型数据库、适合开发测试"
+      - value: "mongodb"
+        label: "MongoDB"
+        description: "NoSQL、文档型、适合灵活数据结构"
+
+  deployment:
+    type: select
+    label: "部署形式"
+    required: true
+    options:
+      - value: "local-docker"
+        label: "本地脚本 + Docker"
+        description: "本地启动，Docker启动基础环境（数据库等）"
+      - value: "docker-compose"
+        label: "Docker Compose"
+        description: "一键启动所有服务，适合开发和测试"
+      - value: "kubernetes"
+        label: "Kubernetes"
+        description: "容器编排，适合生产环境部署"
+      - value: "cloud-native"
+        label: "云原生部署"
+        description: "云服务商托管，如 AWS、阿里云等"

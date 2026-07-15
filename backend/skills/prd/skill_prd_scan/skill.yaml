@@ -1,0 +1,34 @@
+name: "项目结构扫描"
+id: "devsmart.prd.scan"
+version: "1.0.0"
+description: "扫描现有项目的目录结构、技术栈和代码依赖"
+category: "prd"
+
+inputs:
+  - name: project_dir
+    type: string
+    description: "项目目录路径"
+    required: true
+
+outputs:
+  - name: status
+    type: string
+    description: "执行状态: SUCCESS 或 ERROR"
+  - name: message
+    type: string
+    description: "执行结果消息"
+  - name: project_structure
+    type: object
+    description: "项目目录结构"
+  - name: tech_stack
+    type: object
+    description: "识别到的技术栈"
+  - name: dependencies
+    type: object
+    description: "项目依赖信息"
+  - name: existing_prd
+    type: object
+    description: "现有的 PRD 信息"
+
+execution_type: "sync"
+requires_llm: false

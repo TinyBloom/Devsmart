@@ -1,0 +1,36 @@
+{
+  "project_id": "8eada2a9-621c-4410-be75-243d0be6553a",
+  "project_name": "fsadsadffsa",
+  "created_at": "2026-07-14T14:06:12.223834",
+  "current_phase": "prd",
+  "phases": {
+    "prd": {
+      "status": "pending"
+    },
+    "tech": {
+      "status": "pending"
+    },
+    "prototype": {
+      "status": "pending"
+    },
+    "scaffold": {
+      "status": "pending"
+    },
+    "code": {
+      "status": "pending"
+    },
+    "test": {
+      "status": "pending"
+    },
+    "deploy": {
+      "status": "pending"
+    }
+  },
+  "modules": {},
+  "artifacts": {},
+  "settings": {
+    "max_autofix_retries": 3,
+    "llm_provider": "minimax",
+    "llm_model": "MiniMax-M3"
+  }
+}
