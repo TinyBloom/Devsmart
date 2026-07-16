@@ -1,16 +1,26 @@
-/**
- * HomePage Component
- * 主页面，左右结构布局
- */
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { KeyboardEvent } from 'react';
+import {
+  FolderKanban,
+  LoaderCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  Sparkles,
+} from 'lucide-react';
 import type { Project, OnboardingData, ProjectType } from '../types';
 import { projectApi } from '../services/api';
 import { ProjectList } from '../components/ProjectList';
 import { OnboardingWizard } from '../components/OnboardingWizard';
 
 type ActiveView = 'list' | 'create';
+
+type NavItem = {
+  id: ActiveView;
+  label: string;
+  icon: 'create' | 'list';
+};
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -20,10 +30,6 @@ export function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeView, setActiveView] = useState<ActiveView>('list');
 
-  useEffect(() => {
-    loadProjects();
-  }, [searchQuery]);
-
   const loadProjects = useCallback(async () => {
     setLoading(true);
     try {
@@ -31,11 +37,21 @@ export function HomePage() {
       setProjects(data);
     } catch (error) {
       console.error('加载项目失败:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [searchQuery]);
 
-  const handleCreateProject = async (onboardingData: OnboardingData, projectType: ProjectType, projectName: string, sourcePath?: string) => {
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  const handleCreateProject = async (
+    onboardingData: OnboardingData,
+    projectType: ProjectType,
+    projectName: string,
+    sourcePath?: string,
+  ) => {
     try {
       const description = onboardingData.requirement_description.substring(0, 200);
       await projectApi.createProject({
@@ -46,7 +62,7 @@ export function HomePage() {
         onboarding_data: onboardingData,
       });
       setActiveView('list');
-      loadProjects();
+      await loadProjects();
     } catch (error: any) {
       alert(error.response?.data?.detail || '创建项目失败');
     }
@@ -67,166 +83,138 @@ export function HomePage() {
     }
     try {
       await projectApi.deleteProject(name);
-      loadProjects();
+      await loadProjects();
     } catch (error) {
       console.error('删除项目失败:', error);
     }
   };
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { id: 'create', label: '创建新项目', icon: 'create' },
     { id: 'list', label: '项目列表', icon: 'list' },
   ];
 
-  const handleNavKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      (e.target as HTMLButtonElement).click();
+  const handleNavKeyDown = (event: KeyboardEvent<HTMLButtonElement>, item: NavItem) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setActiveView(item.id);
     }
   };
 
-  const renderIcon = (iconName: string) => {
-    const icons = {
-      create: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      ),
-      list: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-        </svg>
-      ),
-    };
-    return icons[iconName as keyof typeof icons] || icons.list;
+  const renderIcon = (iconName: NavItem['icon']) => {
+    if (iconName === 'create') {
+      return <Plus size={18} strokeWidth={1.8} aria-hidden="true" />;
+    }
+    return <FolderKanban size={18} strokeWidth={1.8} aria-hidden="true" />;
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* 左侧导航栏 */}
-      <aside
-        className={`flex flex-col bg-white border-r border-gray-200 flex-shrink-0 transition-all duration-300 ease-in-out ${
-          sidebarOpen ? 'w-[15%]' : 'w-16'
-        }`}
-      >
-        {/* 侧边栏头部 */}
-        <div className="flex items-center justify-center p-4 border-b border-gray-200">
+    <div className={`app-shell ${sidebarOpen ? '' : 'sidebar-is-collapsed'}`}>
+      <aside className={`app-sidebar ${sidebarOpen ? 'is-open' : 'is-collapsed'}`}>
+        <div className="sidebar-brand">
           <button
+            className="brand-mark"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex items-center gap-3 w-full justify-center hover:bg-gray-50 rounded-lg p-2 transition-colors"
             aria-label={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
+            title={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
           >
-            <div className="w-10 h-10 bg-[#2496ED] rounded-lg flex items-center justify-center">
-              <span className="text-xl font-bold text-white">D</span>
-            </div>
-            {sidebarOpen && (
-              <span className="text-xl font-bold text-gray-900">DevSmart</span>
-            )}
+            <Sparkles size={20} strokeWidth={1.8} aria-hidden="true" />
           </button>
+          {sidebarOpen && (
+            <div>
+              <div className="brand-name">DevSmart</div>
+              <div className="brand-caption">AI product workspace</div>
+            </div>
+          )}
         </div>
 
-        {/* 导航菜单 */}
-        {sidebarOpen && (
-          <nav className="flex-1 p-3 space-y-1">
+        <nav className="sidebar-nav" aria-label="主导航">
+          {sidebarOpen && <div className="sidebar-label">工作区</div>}
+          <div className="sidebar-nav-list">
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveView(item.id as ActiveView)}
-                onKeyDown={handleNavKeyDown}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-[background-color,color] duration-200 focus-visible:ring-2 focus-visible:ring-[#2496ED] focus-visible:ring-offset-2 ${
-                  activeView === item.id
-                    ? 'bg-[#2496ED] text-white'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                }`}
+                type="button"
+                onClick={() => setActiveView(item.id)}
+                onKeyDown={(event) => handleNavKeyDown(event, item)}
+                className={`sidebar-nav-item ${activeView === item.id ? 'is-active' : ''}`}
                 aria-label={item.label}
+                title={!sidebarOpen ? item.label : undefined}
               >
                 {renderIcon(item.icon)}
-                <span className="font-medium">{item.label}</span>
+                {sidebarOpen && <span>{item.label}</span>}
               </button>
             ))}
-          </nav>
-        )}
-
-        {/* 收起状态：只显示图标按钮 */}
-        {!sidebarOpen && (
-          <nav className="flex-1 flex flex-col items-center justify-center p-3">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setSidebarOpen(true);
-                  setActiveView(item.id as ActiveView);
-                }}
-                onKeyDown={handleNavKeyDown}
-                className={`w-12 h-12 flex items-center justify-center rounded-lg transition-[background-color,color] duration-200 focus-visible:ring-2 focus-visible:ring-[#2496ED] focus-visible:ring-offset-2 ${
-                  activeView === item.id
-                    ? 'bg-[#2496ED] text-white'
-                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-                }`}
-                aria-label={item.label}
-                title={item.label}
-              >
-                {renderIcon(item.icon)}
-              </button>
-            ))}
-          </nav>
-        )}
-
-        {/* 折叠按钮（仅展开时显示） */}
-        {sidebarOpen && (
-          <div className="p-3 border-t border-gray-200">
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="w-full flex items-center justify-center gap-2 py-3 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              aria-label="收起侧边栏"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="font-medium">收起侧边栏</span>
-            </button>
           </div>
-        )}
+        </nav>
+
+        <div className="sidebar-footer">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="sidebar-collapse-button"
+            aria-label={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
+            title={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
+          >
+            {sidebarOpen ? <PanelLeftClose size={18} aria-hidden="true" /> : <PanelLeftOpen size={18} aria-hidden="true" />}
+            {sidebarOpen && <span>收起侧边栏</span>}
+          </button>
+        </div>
       </aside>
 
-      {/* 右侧内容区 */}
-      <div className="flex-1 flex flex-col h-full min-w-0">
-        {/* 顶部标题栏 */}
-        <header className="bg-white border-b border-gray-200 h-[8%] flex items-center justify-center">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-            DevSmart <span className="text-[#2496ED] font-normal">LLM驱动的软件开发平台</span>
-          </h1>
+      <div className="app-main">
+        <header className="app-topbar">
+          <div>
+            <div className="topbar-overline">AI development workspace</div>
+            <h1 className="topbar-title">从想法到可交付 PRD</h1>
+          </div>
+          <div className="topbar-status" aria-label="工作区已就绪">
+            <span className="status-dot" aria-hidden="true" />
+            <span>工作区已就绪</span>
+          </div>
         </header>
 
-        {/* 主体内容区 */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
-          <div className={`p-6 md:p-8 mx-auto h-full ${sidebarOpen ? 'w-[80%]' : 'w-[90%]'}`}>
+        <main id="main-content" className="app-content">
+          <div className="page-container">
             {activeView === 'list' ? (
-              loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex items-center gap-3 text-gray-500">
-                    <svg className="w-6 h-6 animate-spin text-[#2496ED]" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span className="text-lg">加载中…</span>
+              <>
+                <div className="page-intro">
+                  <div>
+                    <div className="page-eyebrow">Projects</div>
+                    <h2 className="page-heading">你的项目</h2>
+                    <p className="page-description">管理需求、对话与 PRD 产出，让每个想法都有清晰的下一步。</p>
                   </div>
+                  <button type="button" className="primary-button" onClick={() => setActiveView('create')}>
+                    <Plus size={17} aria-hidden="true" />
+                    创建新项目
+                  </button>
                 </div>
-              ) : (
-                <ProjectList
-                  projects={projects}
-                  onSelectProject={handleSelectProject}
-                  onDeleteProject={handleDeleteProject}
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                />
-              )
+
+                {loading ? (
+                  <div className="page-loading">
+                    <div className="loading-inline">
+                      <LoaderCircle size={20} className="loading-icon" aria-hidden="true" />
+                      <span>正在加载项目...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <ProjectList
+                    projects={projects}
+                    onSelectProject={handleSelectProject}
+                    onDeleteProject={handleDeleteProject}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                  />
+                )}
+              </>
             ) : (
-              <OnboardingWizard
-                onComplete={handleCreateProject}
-                onCancel={() => setActiveView('list')}
-                embedded
-              />
+              <div className="onboarding-shell">
+                <OnboardingWizard
+                  onComplete={handleCreateProject}
+                  onCancel={() => setActiveView('list')}
+                  embedded
+                />
+              </div>
             )}
           </div>
         </main>

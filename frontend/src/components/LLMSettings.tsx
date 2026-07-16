@@ -1,10 +1,15 @@
-/**
- * LLMSettings Component
- * LLM 设置页面组件
- * 根据 DevSmart_PRD_v1.0.md Section 5.0.7 设计
- */
-
 import { useState, useEffect } from 'react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  Save,
+  SlidersHorizontal,
+  Wifi,
+  X,
+} from 'lucide-react';
 import type { LLMSettings as LLMSettingsType, TestConnectionResult } from '../types';
 import { settingsApi } from '../services/api';
 
@@ -64,7 +69,6 @@ export function LLMSettings({ onClose }: LLMSettingsProps) {
     created_at: '',
     updated_at: '',
   });
-
   const [testResult, setTestResult] = useState<TestConnectionResult | null>(null);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -102,8 +106,9 @@ export function LLMSettings({ onClose }: LLMSettingsProps) {
         provider: settings.llm_provider,
         model: settings.llm_model,
       });
+    } finally {
+      setTesting(false);
     }
-    setTesting(false);
   };
 
   const handleSave = async () => {
@@ -121,25 +126,31 @@ export function LLMSettings({ onClose }: LLMSettingsProps) {
       onClose();
     } catch (error) {
       console.error('保存设置失败:', error);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   return (
-    <div className="settings-overlay">
+    <div className="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="llm-settings-title">
       <div className="settings-panel">
         <div className="settings-header">
-          <h2>LLM 设置</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <div>
+            <div className="page-eyebrow">Workspace settings</div>
+            <h2 id="llm-settings-title">LLM 设置</h2>
+          </div>
+          <button type="button" className="close-btn" onClick={onClose} aria-label="关闭设置">
+            <X size={19} strokeWidth={1.8} aria-hidden="true" />
+          </button>
         </div>
 
         <div className="settings-content">
-          {/* 1. LLM 提供商 */}
           <div className="setting-group">
             <label>LLM 提供商</label>
-            <div className="provider-options">
+            <div className="provider-options" role="group" aria-label="LLM 提供商">
               {PROVIDERS.map((provider) => (
                 <button
+                  type="button"
                   key={provider}
                   className={`provider-btn ${settings.llm_provider === provider ? 'active' : ''}`}
                   onClick={() => handleProviderChange(provider)}
@@ -150,70 +161,72 @@ export function LLMSettings({ onClose }: LLMSettingsProps) {
             </div>
           </div>
 
-          {/* 2. 模型选择 */}
           <div className="setting-group">
-            <label>模型选择</label>
+            <label htmlFor="llm-model">模型选择</label>
             {settings.llm_provider === 'custom' ? (
               <input
+                id="llm-model"
                 type="text"
                 value={settings.llm_model}
-                onChange={(e) => setSettings({ ...settings, llm_model: e.target.value })}
+                onChange={(event) => setSettings({ ...settings, llm_model: event.target.value })}
                 placeholder="输入自定义模型名称"
                 className="model-input"
               />
             ) : (
               <select
+                id="llm-model"
                 value={settings.llm_model}
-                onChange={(e) => setSettings({ ...settings, llm_model: e.target.value })}
+                onChange={(event) => setSettings({ ...settings, llm_model: event.target.value })}
                 className="model-select"
               >
                 {PROVIDER_MODELS[settings.llm_provider]?.map((model) => (
-                  <option key={model} value={model}>
-                    {model}
-                  </option>
+                  <option key={model} value={model}>{model}</option>
                 ))}
               </select>
             )}
           </div>
 
-          {/* 3. 自定义 Base URL（自定义模式时显示） */}
           {(settings.llm_provider === 'custom' || settings.llm_provider === 'ollama') && (
             <div className="setting-group">
-              <label>Base URL</label>
+              <label htmlFor="base-url">Base URL</label>
               <input
-                type="text"
+                id="base-url"
+                type="url"
                 value={settings.base_url}
-                onChange={(e) => setSettings({ ...settings, base_url: e.target.value })}
+                onChange={(event) => setSettings({ ...settings, base_url: event.target.value })}
                 placeholder="API 基础地址"
                 className="base-url-input"
               />
-              <p className="hint">提示：Ollama 默认 http://localhost:11434</p>
+              <p className="hint">Ollama 默认地址为 http://localhost:11434</p>
             </div>
           )}
 
-          {/* 3. API Key */}
           <div className="setting-group">
-            <label>API Key</label>
+            <label htmlFor="api-key">API Key</label>
             <div className="api-key-input">
               <input
+                id="api-key"
                 type={showApiKey ? 'text' : 'password'}
                 value={settings.api_key}
-                onChange={(e) => setSettings({ ...settings, api_key: e.target.value })}
+                onChange={(event) => setSettings({ ...settings, api_key: event.target.value })}
                 placeholder="API Key（可选，环境变量优先）"
+                autoComplete="off"
               />
               <button
+                type="button"
                 className="toggle-visibility"
                 onClick={() => setShowApiKey(!showApiKey)}
+                aria-label={showApiKey ? '隐藏 API Key' : '显示 API Key'}
               >
-                {showApiKey ? '隐藏' : '显示'}
+                {showApiKey ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+                <span>{showApiKey ? '隐藏' : '显示'}</span>
               </button>
             </div>
-            <p className="hint">提示：Key 通过环境变量注入时留空</p>
+            <p className="hint">通过环境变量注入 Key 时可以留空。</p>
           </div>
 
-          {/* 4. 高级参数 */}
           <div className="setting-group advanced">
-            <label>高级参数</label>
+            <label><SlidersHorizontal size={15} aria-hidden="true" />高级参数</label>
 
             <div className="param-item">
               <span>温度</span>
@@ -223,7 +236,8 @@ export function LLMSettings({ onClose }: LLMSettingsProps) {
                 max="1"
                 step="0.1"
                 value={settings.temperature}
-                onChange={(e) => setSettings({ ...settings, temperature: parseFloat(e.target.value) })}
+                onChange={(event) => setSettings({ ...settings, temperature: parseFloat(event.target.value) })}
+                aria-label="温度"
               />
               <span className="param-value">{settings.temperature}</span>
             </div>
@@ -233,9 +247,10 @@ export function LLMSettings({ onClose }: LLMSettingsProps) {
               <input
                 type="number"
                 value={settings.max_tokens}
-                onChange={(e) => setSettings({ ...settings, max_tokens: parseInt(e.target.value) })}
+                onChange={(event) => setSettings({ ...settings, max_tokens: parseInt(event.target.value, 10) })}
                 min="100"
                 max="100000"
+                aria-label="最大 Token"
               />
             </div>
 
@@ -244,242 +259,34 @@ export function LLMSettings({ onClose }: LLMSettingsProps) {
               <input
                 type="checkbox"
                 checked={settings.streaming}
-                onChange={(e) => setSettings({ ...settings, streaming: e.target.checked })}
+                onChange={(event) => setSettings({ ...settings, streaming: event.target.checked })}
+                aria-label="流式输出"
               />
             </div>
           </div>
 
-          {/* 测试结果 */}
           {testResult && (
-            <div className={`test-result ${testResult.status}`}>
-              <p>{testResult.message}</p>
-              {testResult.response_time && (
-                <p className="response-time">响应时间: {testResult.response_time}ms</p>
-              )}
+            <div className={`test-result ${testResult.status}`} role="status">
+              <div className="flex items-center gap-2 font-semibold">
+                {testResult.status === 'success' ? <CheckCircle2 size={16} aria-hidden="true" /> : <AlertCircle size={16} aria-hidden="true" />}
+                <span>{testResult.message}</span>
+              </div>
+              {testResult.response_time && <p className="response-time">响应时间：{testResult.response_time}ms</p>}
             </div>
           )}
         </div>
 
         <div className="settings-footer">
-          <button className="test-btn" onClick={handleTestConnection} disabled={testing}>
+          <button type="button" className="test-btn" onClick={handleTestConnection} disabled={testing || saving}>
+            {testing ? <LoaderCircle size={16} className="loading-icon" aria-hidden="true" /> : <Wifi size={16} aria-hidden="true" />}
             {testing ? '测试中...' : '测试连接'}
           </button>
-          <button className="save-btn" onClick={handleSave} disabled={saving}>
+          <button type="button" className="save-btn" onClick={handleSave} disabled={saving || testing}>
+            {saving ? <LoaderCircle size={16} className="loading-icon" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
             {saving ? '保存中...' : '保存设置'}
           </button>
         </div>
-
       </div>
-
-      <style>{`
-        .settings-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-
-        .settings-panel {
-          background: white;
-          border-radius: 16px;
-          width: 500px;
-          max-width: 90%;
-          max-height: 90vh;
-          overflow: auto;
-        }
-
-        .settings-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 20px;
-          border-bottom: 1px solid #ddd;
-        }
-
-        .settings-header h2 {
-          font-size: 18px;
-          color: #333;
-        }
-
-        .close-btn {
-          width: 30px;
-          height: 30px;
-          border: none;
-          background: transparent;
-          font-size: 24px;
-          cursor: pointer;
-          color: #888;
-        }
-
-        .settings-content {
-          padding: 20px;
-        }
-
-        .setting-group {
-          margin-bottom: 20px;
-        }
-
-        .setting-group label {
-          display: block;
-          margin-bottom: 10px;
-          font-size: 14px;
-          font-weight: 600;
-          color: #333;
-        }
-
-        .provider-options {
-          display: flex;
-          gap: 10px;
-        }
-
-        .provider-btn {
-          padding: 8px 16px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          background: white;
-          cursor: pointer;
-          font-size: 13px;
-        }
-
-        .provider-btn.active {
-          background: #4CAF50;
-          color: white;
-          border-color: #4CAF50;
-        }
-
-        .model-select {
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          font-size: 14px;
-        }
-
-        .api-key-input {
-          display: flex;
-          gap: 10px;
-        }
-
-        .api-key-input input {
-          flex: 1;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          font-size: 14px;
-        }
-
-        .toggle-visibility {
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          background: white;
-          cursor: pointer;
-          font-size: 13px;
-        }
-
-        .hint {
-          font-size: 12px;
-          color: #888;
-          margin-top: 5px;
-        }
-
-        .advanced .param-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 10px;
-        }
-
-        .param-item span:first-child {
-          width: 100px;
-          font-size: 13px;
-        }
-
-        .param-item input[type="range"] {
-          flex: 1;
-        }
-
-        .param-value {
-          width: 40px;
-          text-align: right;
-        }
-
-        .param-item input[type="number"] {
-          flex: 1;
-          padding: 5px 10px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-        }
-
-        .param-item input[type="checkbox"] {
-          width: 20px;
-          height: 20px;
-        }
-
-        .test-result {
-          padding: 15px;
-          border-radius: 8px;
-          margin-top: 15px;
-        }
-
-        .test-result.success {
-          background: #e8f5e9;
-          color: #2e7d32;
-        }
-
-        .test-result.error {
-          background: #ffebee;
-          color: #c62828;
-        }
-
-        .response-time {
-          font-size: 12px;
-          margin-top: 5px;
-        }
-
-        .settings-footer {
-          display: flex;
-          gap: 10px;
-          padding: 20px;
-          border-top: 1px solid #ddd;
-        }
-
-        .test-btn {
-          flex: 1;
-          padding: 12px;
-          border: none;
-          border-radius: 8px;
-          background: #2196F3;
-          color: white;
-          cursor: pointer;
-          font-size: 14px;
-        }
-
-        .test-btn:disabled {
-          background: #ccc;
-        }
-
-        .save-btn {
-          flex: 1;
-          padding: 12px;
-          border: none;
-          border-radius: 8px;
-          background: #4CAF50;
-          color: white;
-          cursor: pointer;
-          font-size: 14px;
-        }
-
-        .save-btn:disabled {
-          background: #ccc;
-        }
-      `}</style>
     </div>
   );
 }

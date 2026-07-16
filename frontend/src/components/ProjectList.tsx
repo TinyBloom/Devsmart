@@ -1,8 +1,4 @@
-/**
- * ProjectList Component
- * 项目列表展示组件
- */
-
+import { ArrowUpRight, FolderOpen, Search, Trash2 } from 'lucide-react';
 import type { Project } from '../types';
 
 interface ProjectListProps {
@@ -20,21 +16,11 @@ export function ProjectList({
   searchQuery,
   onSearchChange,
 }: ProjectListProps) {
-  const getPhaseColor = (phase: string) => {
-    switch (phase) {
-      case 'prd':
-        return 'bg-emerald-100 text-emerald-700';
-      case 'tech':
-        return 'bg-[#E3F2FD] text-[#2496ED]';
-      case 'code':
-        return 'bg-amber-100 text-amber-700';
-      case 'test':
-        return 'bg-purple-100 text-purple-700';
-      case 'deploy':
-        return 'bg-orange-100 text-orange-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
+  const getPhaseClass = (phase: string) => {
+    if (['prd', 'tech', 'code', 'test', 'deploy'].includes(phase)) {
+      return `phase-${phase}`;
     }
+    return 'phase-default';
   };
 
   const getPhaseLabel = (phase: string) => {
@@ -67,85 +53,78 @@ export function ProjectList({
     }
   };
 
-  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, project: Project) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onSelectProject(project);
-    }
-  };
-
   return (
-    <div className="w-full">
-      {/* 搜索框 */}
-      <div className="mb-6">
-        <label htmlFor="project-search" className="sr-only">搜索项目</label>
-        <input
-          id="project-search"
-          type="text"
-          name="project-search"
-          placeholder="搜索项目…"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          spellCheck={false}
-          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#2496ED] focus:border-[#2496ED] transition-[border-color,ring-color] duration-200"
-          aria-label="搜索项目"
-        />
+    <section className="project-list" aria-label="项目列表">
+      <div className="project-list-toolbar">
+        <p className="project-count">共 {projects.length} 个项目</p>
+        <div className="search-field">
+          <Search size={17} strokeWidth={1.8} aria-hidden="true" />
+          <label htmlFor="project-search" className="sr-only">搜索项目</label>
+          <input
+            id="project-search"
+            type="search"
+            name="project-search"
+            placeholder="按名称搜索项目"
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+            spellCheck={false}
+            aria-label="搜索项目"
+          />
+        </div>
       </div>
 
-      {/* 项目列表 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="project-grid">
         {projects.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-24 text-gray-500">
-            <p className="text-xl font-medium text-gray-900">暂无项目</p>
-            <p className="text-gray-500 mt-2">点击左侧"创建新项目"开始您的 AI 开发之旅</p>
+          <div className="project-empty">
+            <div className="project-empty-icon">
+              <FolderOpen size={24} strokeWidth={1.7} aria-hidden="true" />
+            </div>
+            <strong>{searchQuery ? '没有找到匹配项目' : '还没有项目'}</strong>
+            <p>{searchQuery ? '尝试更换关键词，或清空搜索条件。' : '点击“创建新项目”，开始梳理你的第一个想法。'}</p>
           </div>
         ) : (
           projects.map((project) => (
-            <div
-              key={project.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelectProject(project)}
-              onKeyDown={(e) => handleCardKeyDown(e, project)}
-              className="w-full text-left bg-white border border-gray-200 rounded-lg p-6 hover:border-[#2496ED] hover:shadow-md transition-[border-color,box-shadow] duration-200 group focus-visible:ring-2 focus-visible:ring-[#2496ED] focus-visible:ring-offset-2 cursor-pointer"
-              aria-label={`选择项目 ${project.name}`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#2496ED]">
-                  {project.name}
-                </h3>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteProject(project.name);
-                  }}
-                  className="px-3 py-1.5 text-xs text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-                  aria-label={`删除项目 ${project.name}`}
-                >
-                  删除
-                </button>
-              </div>
+            <article key={project.id} className="project-card">
+              <button
+                type="button"
+                className="project-card-main"
+                onClick={() => onSelectProject(project)}
+                aria-label={`打开项目 ${project.name}`}
+              >
+                <div className="project-card-heading">
+                  <h3>{project.name}</h3>
+                </div>
 
-              {project.description && (
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
-              )}
+                <p className="project-card-description">
+                  {project.description || '暂无项目描述'}
+                </p>
 
-              <div className="flex items-center gap-3 text-sm">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getPhaseColor(project.current_phase)}`}>
-                  {getPhaseLabel(project.current_phase)}
-                </span>
-                <span className="text-gray-500">v{project.prd_version}</span>
-              </div>
+                <div className="project-card-meta">
+                  <span className={`phase-badge ${getPhaseClass(project.current_phase)}`}>
+                    {getPhaseLabel(project.current_phase)}
+                  </span>
+                  <span className="project-version">PRD v{project.prd_version}</span>
+                </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <span className="text-xs text-gray-400">
-                  更新于 {formatDate(project.updated_at)}
-                </span>
-              </div>
-            </div>
+                <div className="project-card-footer flex items-center justify-between gap-3">
+                  <span>更新于 {formatDate(project.updated_at)}</span>
+                  <ArrowUpRight size={15} strokeWidth={1.8} aria-hidden="true" />
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onDeleteProject(project.name)}
+                className="project-delete"
+                aria-label={`删除项目 ${project.name}`}
+                title="删除项目"
+              >
+                <Trash2 size={16} strokeWidth={1.8} aria-hidden="true" />
+              </button>
+            </article>
           ))
         )}
       </div>
-    </div>
+    </section>
   );
 }

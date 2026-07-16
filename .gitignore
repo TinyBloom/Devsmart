@@ -225,3 +225,7 @@ __marimo__/
 
 # RAG Vector Database
 rag_db/
+
+.agents/
+
+skills-lock.json

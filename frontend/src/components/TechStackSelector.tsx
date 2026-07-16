@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangle, Lightbulb } from 'lucide-react';
 
 interface TechOption {
   key: string;
@@ -177,7 +178,7 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         <span className="ml-3 text-gray-600">加载技术栈选项...</span>
       </div>
     );
@@ -189,7 +190,7 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
         <p className="text-red-600">{error}</p>
         <button
           onClick={loadTechStackLibrary}
-          className="mt-2 text-sm text-blue-600 hover:underline"
+          className="mt-2 text-sm text-indigo-600 hover:underline"
         >
           重试
         </button>
@@ -199,9 +200,9 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
 
   return (
     <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-medium text-blue-900">需求分析</h3>
-        <div className="mt-2 text-sm text-blue-700">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+        <h3 className="font-medium text-indigo-900">需求分析</h3>
+        <div className="mt-2 text-sm text-indigo-700">
           {analysis && (
             <div className="grid grid-cols-2 gap-2">
               <span>规模: {analysis.scale}</span>
@@ -212,19 +213,19 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
           )}
         </div>
         {library && (
-          <div className="mt-3 pt-3 border-t border-blue-200">
-            <h4 className="text-xs font-medium text-blue-700 uppercase">可用技术栈选项</h4>
+          <div className="mt-3 pt-3 border-t border-indigo-200">
+            <h4 className="text-xs font-medium text-indigo-700 uppercase">可用技术栈选项</h4>
             <div className="flex flex-wrap gap-2 mt-1 text-xs">
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
                 后端: {Object.keys(library.backend || {}).length}
               </span>
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
                 前端: {Object.keys(library.frontend || {}).length}
               </span>
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
                 数据库: {Object.keys(library.database || {}).length}
               </span>
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
                 部署: {Object.keys(library.deployment || {}).length}
               </span>
             </div>
@@ -240,7 +241,7 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
             key={index}
             className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
               selectedIndex === index
-                ? 'border-blue-500 bg-blue-50'
+                ? 'border-indigo-500 bg-indigo-50'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
             onClick={() => handleSelect(index)}
@@ -249,13 +250,13 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
               <div>
                 <h4 className="font-medium text-gray-900">{rec.name}</h4>
                 <p className="text-sm text-gray-600 mt-1">{rec.description}</p>
-                <p className="text-sm text-blue-600 mt-2">
+                <p className="text-sm text-indigo-600 mt-2">
                   <span className="font-medium">推荐理由:</span> {rec.reason}
                 </p>
               </div>
               {selectedIndex === index && (
                 <div className="flex-shrink-0">
-                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -359,7 +360,7 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
           {validation.warnings.map((w, i) => (
             <div key={i} className="mt-2 p-2 bg-white border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800">
-                <span className="font-medium">⚠️ {w.severity.toUpperCase()}:</span> {w.message}
+                <span className="font-medium inline-flex items-center gap-1"><AlertTriangle size={14} aria-hidden="true" />{w.severity.toUpperCase()}:</span> {w.message}
               </p>
               {w.suggestion && (
                 <p className="text-sm text-gray-600 mt-1">建议: {w.suggestion}</p>
@@ -368,8 +369,8 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
           ))}
 
           {validation.suggestions.map((s, i) => (
-            <div key={i} className="mt-2 p-2 bg-white border border-blue-200 rounded">
-              <p className="text-sm text-blue-800">💡 {s.message}</p>
+            <div key={i} className="mt-2 p-2 bg-white border border-indigo-200 rounded">
+              <p className="text-sm text-indigo-800 flex items-start gap-1"><Lightbulb size={14} className="mt-0.5 shrink-0" aria-hidden="true" /><span>{s.message}</span></p>
             </div>
           ))}
         </div>
@@ -380,7 +381,7 @@ const TechStackSelector: React.FC<TechStackSelectorProps> = ({ projectName, onCo
         <button
           onClick={handleConfirm}
           disabled={saving || recommendations.length === 0}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? '保存中...' : '确认技术栈'}
         </button>

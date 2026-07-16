@@ -8,7 +8,9 @@ import {
   Code2,
   Database,
   Cloud,
-  FileText
+  FileText,
+  RefreshCw,
+  Sprout,
 } from 'lucide-react';
 import type { OnboardingTemplate, OnboardingData, ProjectType } from '../types';
 import { projectApi } from '../services/api';
@@ -115,11 +117,11 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                 onClick={() => setProjectType('greenfield')}
                 className={`p-6 rounded-lg border-2 transition-[border-color,background-color] ${
                   projectType === 'greenfield'
-                    ? 'border-[#2496ED] bg-[#E3F2FD]'
+                    ? 'border-[#4F46E5] bg-indigo-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="text-4xl mb-4">🌱</div>
+                <div className="text-indigo-600 mb-4"><Sprout size={34} strokeWidth={1.7} aria-hidden="true" /></div>
                 <h3 className="text-lg font-semibold mb-2">全新项目</h3>
                 <p className="text-sm text-gray-600">从无到有创建一个新项目，适合从零开始开发</p>
               </button>
@@ -127,11 +129,11 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                 onClick={() => setProjectType('incremental')}
                 className={`p-6 rounded-lg border-2 transition-[border-color,background-color] ${
                   projectType === 'incremental'
-                    ? 'border-[#2496ED] bg-[#E3F2FD]'
+                    ? 'border-[#4F46E5] bg-indigo-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="text-4xl mb-4">🔄</div>
+                <div className="text-indigo-600 mb-4"><RefreshCw size={34} strokeWidth={1.7} aria-hidden="true" /></div>
                 <h3 className="text-lg font-semibold mb-2">现有项目</h3>
                 <p className="text-sm text-gray-600">在已有项目基础上添加新功能或修复 Bug</p>
               </button>
@@ -151,7 +153,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                 placeholder="例如: my-awesome-project"
                 className={`w-full px-4 py-3 rounded-lg border ${
                   errors.projectName ? 'border-red-500' : 'border-gray-300'
-                } focus:ring-2 focus:ring-[#2496ED] focus:border-transparent`}
+                } focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent`}
               />
               {errors.projectName && (
                 <p className="text-red-500 text-sm mt-1">{errors.projectName}</p>
@@ -164,7 +166,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                 onChange={(e) => setProjectDescription(e.target.value)}
                 placeholder="简要描述您的项目..."
                 rows={3}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2496ED] focus:border-transparent"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent"
               />
             </div>
             {projectType === 'incremental' && (
@@ -177,7 +179,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                   placeholder="例如: /home/user/projects/my-project"
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.sourcePath ? 'border-red-500' : 'border-gray-300'
-                  } focus:ring-2 focus:ring-[#2496ED] focus:border-transparent`}
+                  } focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent`}
                 />
                 {errors.sourcePath && (
                   <p className="text-red-500 text-sm mt-1">{errors.sourcePath}</p>
@@ -200,7 +202,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                     onClick={() => setOnboardingData({ ...onboardingData, backend_tech: opt.value })}
                     className={`p-4 rounded-lg border-2 text-left transition-all ${
                       onboardingData.backend_tech === opt.value
-                        ? 'border-[#2496ED] bg-[#E3F2FD]'
+                        ? 'border-[#4F46E5] bg-indigo-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -222,7 +224,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                     onClick={() => setOnboardingData({ ...onboardingData, frontend_tech: opt.value })}
                     className={`p-4 rounded-lg border-2 text-left transition-all ${
                       onboardingData.frontend_tech === opt.value
-                        ? 'border-[#2496ED] bg-[#E3F2FD]'
+                        ? 'border-[#4F46E5] bg-indigo-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -250,7 +252,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                   onClick={() => setOnboardingData({ ...onboardingData, database: opt.value })}
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
                     onboardingData.database === opt.value
-                      ? 'border-[#2496ED] bg-[#E3F2FD]'
+                      ? 'border-[#4F46E5] bg-indigo-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -276,7 +278,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                 onChange={(e) => setOnboardingData({ ...onboardingData, requirement_description: e.target.value })}
                 placeholder="请详细描述您想要开发的功能、业务场景和期望目标..."
                 rows={6}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#2496ED] focus:border-transparent"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#4F46E5] focus:border-transparent"
               />
             </div>
             <div>
@@ -288,7 +290,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                     onClick={() => setOnboardingData({ ...onboardingData, deployment: opt.value })}
                     className={`p-4 rounded-lg border-2 text-left transition-all ${
                       onboardingData.deployment === opt.value
-                        ? 'border-[#2496ED] bg-[#E3F2FD]'
+                        ? 'border-[#4F46E5] bg-indigo-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -386,9 +388,9 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-[background-color] ${
                       isActive
-                        ? 'bg-[#2496ED] text-white'
+                        ? 'bg-[#4F46E5] text-white'
                         : isPast
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-emerald-500 text-white'
                         : 'bg-gray-200 text-gray-600'
                     }`}
                   >
@@ -431,7 +433,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
             <button
               onClick={handleComplete}
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium bg-[#2496ED] text-white hover:bg-blue-700 transition-[background-color] disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium bg-[#4F46E5] text-white hover:bg-indigo-700 transition-[background-color] disabled:opacity-50"
             >
               {loading ? '创建中...' : '确认创建'}
               <Check size={18} />
@@ -439,7 +441,7 @@ export function OnboardingWizard({ onComplete, onCancel, embedded = false }: Onb
           ) : (
             <button
               onClick={handleNext}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium bg-[#2496ED] text-white hover:bg-blue-700 transition-[background-color]"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium bg-[#4F46E5] text-white hover:bg-indigo-700 transition-[background-color]"
             >
               下一步
               <ArrowRight size={18} />
